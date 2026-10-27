@@ -21,6 +21,9 @@ namespace Krabbz.Blynclight
         string state;
         // While set (e.g. red during a phone call), shown instead of the saved state; not saved.
         string callOverride;
+        // Color for the user's Teams status, shown in FollowTeams when the app reads presence itself.
+        // Null means Embrava Connect is driving the light instead.
+        string teamsColor;
         List<string> knownPaths = new List<string>();
         string lastLogged;
 
@@ -38,8 +41,20 @@ namespace Krabbz.Blynclight
 
         // The state the user picked (saved across restarts).
         public string State { get { lock (sync) return state; } }
-        // What the light is actually showing: the call override if one is active, otherwise State.
-        public string ShownState { get { lock (sync) return callOverride ?? state; } }
+        // What the light is actually showing: the call override if one is active, then the Teams color
+        // when following Teams, otherwise State.
+        public string ShownState
+        {
+            get
+            {
+                lock (sync)
+                {
+                    if (callOverride != null) return callOverride;
+                    if (state == LightState.FollowTeams && teamsColor != null) return teamsColor;
+                    return state;
+                }
+            }
+        }
         public bool OverrideActive { get { lock (sync) return callOverride != null; } }
         public int LightCount { get { lock (sync) return knownPaths.Count; } }
 
@@ -62,6 +77,18 @@ namespace Krabbz.Blynclight
             {
                 if (callOverride == overrideState) return;
                 callOverride = overrideState;
+            }
+            Apply(ShownState);
+        }
+
+        // Sets the color for the user's Teams status (e.g. "green", "yellow"); null hands the light back to
+        // Embrava Connect. Only shown while the saved state is FollowTeams and no call override is active.
+        public void SetTeamsColor(string color)
+        {
+            lock (sync)
+            {
+                if (teamsColor == color) return;
+                teamsColor = color;
             }
             Apply(ShownState);
         }

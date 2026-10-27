@@ -90,6 +90,8 @@ namespace Krabbz.Blynclight
         // Check for updates a minute after starting, then this often.
         const int UpdateFirstCheckMs = 60 * 1000;
         const int UpdateCheckMs = 6 * 60 * 60 * 1000;
+        // How often to read Teams presence while following Teams status.
+        const int TeamsPollMs = 20 * 1000;
 
         readonly LightController light = new LightController();
         readonly CallDetector calls;
@@ -98,6 +100,10 @@ namespace Krabbz.Blynclight
         // Sets Teams to Busy during Cytracom calls; null when this build has no Entra app registration.
         readonly TeamsPresence presence;
         ToolStripMenuItem presenceItem;
+        readonly System.Threading.Timer teamsPoll;
+        // Last Teams availability read while signed in (e.g. "Available"), or null.
+        string teamsAvailability;
+        bool embravaWarned;
         readonly System.Threading.Timer updateTimer;
         int updateCheckRunning;
         readonly NotifyIcon tray;
@@ -128,7 +134,7 @@ namespace Krabbz.Blynclight
             if (Program.GraphClientId != null && Program.GraphTenantId != null)
             {
                 presence = new TeamsPresence(Program.GraphClientId, Program.GraphTenantId, message => ShowBalloon(message, ToolTipIcon.Warning));
-                presenceItem = new ToolStripMenuItem("Set Teams to Busy during phone calls", null, delegate { TogglePresence(); });
+                presenceItem = new ToolStripMenuItem("Connect to Microsoft Teams", null, delegate { TogglePresence(); });
                 menu.Items.Add(presenceItem);
                 menu.Items.Add(new ToolStripSeparator());
             }
@@ -176,6 +182,8 @@ namespace Krabbz.Blynclight
                 }
                 catch (InvalidOperationException) { } // Window already gone during exit.
             });
+            if (presence != null)
+                teamsPoll = new System.Threading.Timer(delegate { PollTeams(); }, null, 0, TeamsPollMs);
             if (Program.UpdateRepo != null)
                 updateTimer = new System.Threading.Timer(delegate { CheckForUpdates(false); }, null, UpdateFirstCheckMs, UpdateCheckMs);
             showWait = ThreadPool.RegisterWaitForSingleObject(showSignal,
@@ -259,14 +267,28 @@ namespace Krabbz.Blynclight
             Refresh();
         }
 
-        // Signs in (browser) to turn the feature on, or signs out to turn it off.
+        // Signs in (browser) to connect to Teams, or signs out to disconnect.
         void TogglePresence()
         {
             if (presence.SignedIn)
             {
-                ThreadPool.QueueUserWorkItem(delegate { presence.SignOut(); });
-                ShowBalloon("Signed out. Teams presence won't be changed during phone calls.", ToolTipIcon.Info);
-                UpdateDisplay();
+                ThreadPool.QueueUserWorkItem(delegate
+                {
+                    presence.SignOut();
+                    try
+                    {
+                        messages.BeginInvoke((Action)delegate
+                        {
+                            // Back to Embrava Connect for Teams status, if it's installed.
+                            teamsAvailability = null;
+                            light.SetTeamsColor(null);
+                            if (light.State == LightState.FollowTeams) HandBackToTeams();
+                            Refresh();
+                        });
+                    }
+                    catch (InvalidOperationException) { } // Window already gone during exit.
+                });
+                ShowBalloon("Disconnected from Teams. The app won't read or change your Teams status.", ToolTipIcon.Info);
                 return;
             }
             presenceItem.Enabled = false;
@@ -278,8 +300,9 @@ namespace Krabbz.Blynclight
                 try
                 {
                     presence.SignIn();
-                    message = "Signed in as " + presence.Account + ". Teams will show you as Busy during phone calls.";
+                    message = "Connected to Teams as " + presence.Account + ". Follow Teams Status now uses your Teams status directly, and Teams shows you as Busy during phone calls.";
                     if (callApp == "Cytracom") presence.CallStarted();
+                    PollTeams();
                 }
                 catch (Exception ex)
                 {
@@ -291,7 +314,7 @@ namespace Krabbz.Blynclight
                     messages.BeginInvoke((Action)delegate
                     {
                         presenceItem.Enabled = true;
-                        presenceItem.Text = "Set Teams to Busy during phone calls";
+                        presenceItem.Text = "Connect to Microsoft Teams";
                         UpdateDisplay();
                     });
                 }
@@ -307,9 +330,65 @@ namespace Krabbz.Blynclight
             catch (InvalidOperationException) { } // Window already gone during exit.
         }
 
-        // Restarts Embrava Connect so it repaints the light from current Teams/Calendar presence.
+        // Reads Teams presence and colors the light from it, when signed in and following Teams status.
+        void PollTeams()
+        {
+            if (presence == null || !presence.SignedIn || light.State != LightState.FollowTeams) return;
+            string availability = presence.ReadAvailability();
+            if (availability == null) return;
+
+            if (!embravaWarned && System.Diagnostics.Process.GetProcessesByName("EmbravaConnect").Length > 0)
+            {
+                embravaWarned = true;
+                ShowBalloon("Embrava Connect is also running and may change the light. This app now shows your Teams status itself, so you can quit or uninstall Embrava Connect.", ToolTipIcon.Info);
+            }
+            try
+            {
+                messages.BeginInvoke((Action)delegate
+                {
+                    teamsAvailability = availability;
+                    light.SetTeamsColor(ColorForAvailability(availability));
+                    Refresh();
+                });
+            }
+            catch (InvalidOperationException) { } // Window already gone during exit.
+        }
+
+        static string ColorForAvailability(string availability)
+        {
+            switch (availability)
+            {
+                case "Available": case "AvailableIdle": return "green";
+                case "Busy": case "BusyIdle": return "red";
+                case "DoNotDisturb": return "purple";
+                case "Away": case "BeRightBack": return "yellow";
+                default: return "off"; // Offline, PresenceUnknown
+            }
+        }
+
+        static string DescribeAvailability(string availability)
+        {
+            switch (availability)
+            {
+                case "Available": case "AvailableIdle": return "Available";
+                case "Busy": case "BusyIdle": return "Busy";
+                case "DoNotDisturb": return "Do not disturb";
+                case "Away": return "Away";
+                case "BeRightBack": return "Be right back";
+                case "Offline": return "Offline";
+                default: return "Unknown";
+            }
+        }
+
+        // Puts the light back on Teams status: read directly when signed in, otherwise through Embrava Connect
+        // (restarted so it repaints from current Teams/Calendar presence).
         void HandBackToTeams()
         {
+            if (presence != null && presence.SignedIn)
+            {
+                ThreadPool.QueueUserWorkItem(delegate { PollTeams(); });
+                return;
+            }
             ThreadPool.QueueUserWorkItem(delegate
             {
                 bool installed;
@@ -342,6 +421,7 @@ namespace Krabbz.Blynclight
             {
                 if (light.LightCount == 0) return "Light not found";
                 if (light.OverrideActive) return "On a " + callApp + " call (Busy)";
+                if (light.State == LightState.FollowTeams && teamsAvailability != null) return "Teams: " + DescribeAvailability(teamsAvailability);
                 return LightState.Describe(State);
             }
         }
@@ -352,6 +432,9 @@ namespace Krabbz.Blynclight
             else if (State == LightState.Red) DisplayColor = Color.Red;
             else if (State == LightState.Green) DisplayColor = Color.Lime;
             else if (State == LightState.FlashRedBlue) DisplayColor = flashRed ? Color.Red : Color.Blue;
+            // Teams status colors, when the app reads presence itself.
+            else if (State == "yellow") DisplayColor = Color.Gold;
+            else if (State == "purple") DisplayColor = Color.MediumPurple;
             // The real color is up to Embrava Connect; show Teams purple to mean "Teams decides".
             else if (State == LightState.FollowTeams) DisplayColor = Color.FromArgb(98, 100, 167);
             else DisplayColor = Color.Black;
@@ -364,7 +447,7 @@ namespace Krabbz.Blynclight
             if (presenceItem != null)
             {
                 presenceItem.Checked = presence.SignedIn;
-                presenceItem.ToolTipText = presence.SignedIn ? "Signed in as " + presence.Account + ". Click to sign out." : "Click to sign in to Microsoft.";
+                presenceItem.ToolTipText = presence.SignedIn ? "Connected as " + presence.Account + ". Click to disconnect." : "Sign in to Microsoft so the light follows your Teams status and Teams shows Busy during phone calls.";
             }
             if (DisplayChanged != null) DisplayChanged();
         }
@@ -393,6 +476,7 @@ namespace Krabbz.Blynclight
         {
             for (int id = 0; id < HotkeyStates.Length; id++) UnregisterHotKey(messages.Handle, id);
             calls.Dispose();
+            if (teamsPoll != null) teamsPoll.Dispose();
             if (presence != null) presence.Dispose(); // Clears Busy if a phone call is in progress.
             if (updateTimer != null) updateTimer.Dispose();
             showWait.Unregister(null);

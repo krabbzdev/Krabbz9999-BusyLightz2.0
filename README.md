@@ -12,7 +12,8 @@ Release notes and older versions: [Releases](https://github.com/showtechclove1/K
 - **Right-click menu:** Red, Green, Flashing Red / Blue, Off
 - **Control window** with a color swatch and buttons (open from the Start menu or by double-clicking the tray icon)
 - **Global hotkeys:** `Alt+R` = Red, `Alt+G` = Green
-- **Follow Teams Status:** hands the light back to Embrava Connect so it shows your Teams/Calendar presence (restarts Embrava Connect so it repaints right away)
+- **Follow Teams Status:** the light shows your Teams status: green Available, red Busy / In a call, purple Do not disturb, yellow Away. With **Connect to Microsoft Teams** (tray menu) the app reads your status itself every 20 seconds, so Embrava Connect isn't needed; without it, the light is handed back to Embrava Connect.
+- **Connect to Microsoft Teams:** one-time Microsoft sign-in in your browser (delegated `Presence.ReadWrite`, no client secret; the token is encrypted to your Windows account). Also shows you as Busy / In a call in Teams during Cytracom phone calls. Needs builds made with `-GraphClientId` and `-GraphTenantId` from an Entra app registration.
 - **Calls:** turns red while the Cytracom Desktop softphone or Microsoft Teams (new or classic) is on a call (detected from Windows' microphone-in-use record, no API token needed), then returns to your color. Picking a color during a call overrides it until the call ends.
 - Remembers the last color and re-applies it when the light is plugged back in
 - Opens at sign-in (window plus tray icon)

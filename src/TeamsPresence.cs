@@ -13,7 +13,7 @@ using System.Web.Script.Serialization;
 
 namespace Krabbz.Blynclight
 {
-    // Shows the user as Busy / In a call in Teams during phone calls, through Microsoft Graph presence sessions.
+    // Reads the user's Teams presence, and shows them as Busy / In a call during phone calls, through Microsoft Graph.
     // Signs in with the system browser (authorization code + PKCE, loopback redirect) as a public client, so there's
     // no client secret. Only a refresh token is kept, encrypted to the Windows user with DPAPI.
     public class TeamsPresence : IDisposable
@@ -36,6 +36,8 @@ namespace Krabbz.Blynclight
         readonly object sync = new object();
         // Serializes Graph calls so a renewal can't land after the call has been cleared.
         readonly object graphGate = new object();
+        // Serializes token refreshes so two threads can't race on a rotated refresh token.
+        readonly object tokenGate = new object();
         readonly Timer renewTimer;
         string refreshToken;
         string userId;
@@ -211,28 +213,56 @@ namespace Krabbz.Blynclight
 
         string AccessToken()
         {
-            lock (sync)
+            lock (tokenGate)
             {
-                if (accessToken != null && DateTime.UtcNow < accessTokenExpires) return accessToken;
-                if (refreshToken == null) throw new InvalidOperationException("Not signed in to Microsoft.");
+                string refresh;
+                lock (sync)
+                {
+                    if (accessToken != null && DateTime.UtcNow < accessTokenExpires) return accessToken;
+                    if (refreshToken == null) throw new InvalidOperationException("Not signed in to Microsoft.");
+                    refresh = refreshToken;
+                }
+                try
+                {
+                    StoreTokens(RequestTokens(new NameValueCollection
+                    {
+                        { "grant_type", "refresh_token" },
+                        { "refresh_token", refresh },
+                    }));
+                }
+                catch (TokenException ex)
+                {
+                    // The sign-in was revoked or expired; the user has to sign in again from the tray menu.
+                    if (ex.Error == "invalid_grant") SignOut();
+                    throw;
+                }
+                lock (sync) return accessToken;
             }
-            string refresh;
-            lock (sync) refresh = refreshToken;
+        }
+
+        // Returns the user's Teams availability (e.g. "Available", "Busy", "DoNotDisturb", "Away"),
+        // or null if it couldn't be read (the problem is reported once).
+        public string ReadAvailability()
+        {
             try
             {
-                StoreTokens(RequestTokens(new NameValueCollection
+                string token = AccessToken();
+                string user;
+                lock (sync) user = userId;
+                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+                using (var web = new WebClient())
                 {
-                    { "grant_type", "refresh_token" },
-                    { "refresh_token", refresh },
-                }));
+                    web.Headers[HttpRequestHeader.Authorization] = "Bearer " + token;
+                    var result = (Dictionary<string, object>)Json.DeserializeObject(web.DownloadString(GraphUsers + user + "/presence"));
+                    problemReported = false;
+                    return result["availability"] as string;
+                }
             }
-            catch (TokenException ex)
+            catch (Exception ex)
             {
-                // The sign-in was revoked or expired; the user has to sign in again from the tray menu.
-                if (ex.Error == "invalid_grant") SignOut();
-                throw;
+                Report("Couldn't read your Teams status: " + ex.Message);
+                return null;
             }
-            lock (sync) return accessToken;
         }
 
         Dictionary<string, object> RequestTokens(NameValueCollection form)

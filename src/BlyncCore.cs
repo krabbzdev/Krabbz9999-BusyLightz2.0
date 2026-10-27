@@ -122,6 +122,8 @@ namespace Krabbz.Blynclight
                 case "red": return Report(255, 0, 0, false);
                 case "green": return Report(0, 255, 0, false);
                 case "blue": return Report(0, 0, 255, false);
+                case "yellow": return Report(255, 255, 0, false);
+                case "purple": return Report(128, 0, 255, false);
                 default: return Report(0, 0, 0, true);
             }
         }
