@@ -2,9 +2,9 @@
 
 A small Windows tray app for controlling an [Embrava Blynclight](https://embrava.com) USB status light directly over USB. No Embrava account, API key or admin rights needed.
 
-## ⬇️ [Download the installer (latest version)](https://github.com/showtechclove1/Krabbz9999-Blynclight-App-Control/releases/latest/download/Krabbz9999-Blynclight-App-Control.msi)
+## ⬇️ [Download the installer (latest version)](https://github.com/showtechclove1/Krabbz9999-Blynclight/releases/latest/download/Krabbz9999-Blynclight-App-Control.msi)
 
-Release notes and older versions: [Releases](https://github.com/showtechclove1/Krabbz9999-Blynclight-App-Control/releases)
+Release notes and older versions: [Releases](https://github.com/showtechclove1/Krabbz9999-Blynclight/releases)
 
 ## Features
 

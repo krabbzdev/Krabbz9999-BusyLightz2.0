@@ -11,7 +11,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$Version,
     # GitHub owner/repo the app checks for newer releases; empty disables auto-update.
-    [string]$UpdateRepo = 'showtechclove1/Krabbz9999-Blynclight-App-Control',
+    [string]$UpdateRepo = 'showtechclove1/Krabbz9999-Blynclight',
     # Publish the MSI as a GitHub release (needs GitHub CLI, signed in).
     [switch]$Publish
 )
