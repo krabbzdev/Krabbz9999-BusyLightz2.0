@@ -145,7 +145,11 @@ namespace Krabbz.Blynclight
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Setup checklist...", null, delegate { ShowSetup(); });
             menu.Items.Add("Version " + Program.VersionText).Enabled = false;
-            if (Program.UpdateRepo != null) menu.Items.Add("Check for updates", null, delegate { CheckForUpdates(true); });
+            if (Program.UpdateRepo != null)
+            {
+                menu.Items.Add("Check for updates", null, delegate { CheckForUpdates(true); });
+                menu.Items.Add("Project page on GitHub", null, delegate { OpenProjectPage(); });
+            }
             menu.Items.Add("Exit tray app", null, delegate { Application.Exit(); });
 
             tray = new NotifyIcon();
@@ -303,7 +307,12 @@ namespace Krabbz.Blynclight
         }
 
         // Downloads and installs a newer release in the background. Only a manual check reports "up to date" or errors.
-        void CheckForUpdates(bool manual)
+        public void OpenProjectPage()
+        {
+            if (Program.UpdateRepo != null) System.Diagnostics.Process.Start("https://github.com/" + Program.UpdateRepo);
+        }
+
+        public void CheckForUpdates(bool manual)
         {
             if (Interlocked.Exchange(ref updateCheckRunning, 1) == 1) return;
             ThreadPool.QueueUserWorkItem(delegate
@@ -634,13 +643,29 @@ namespace Krabbz.Blynclight
             };
             Controls.Add(hint);
 
-            var version = new Label
+            // "Version x · Built y · Check for updates · Project page", the last two as links.
+            string versionText = "Version " + Program.VersionText + "  ·  Built " + Program.BuildDate;
+            const string UpdatesLink = "Check for updates", ProjectLink = "Project page";
+            if (Program.UpdateRepo != null) versionText += "  ·  " + UpdatesLink + "  ·  " + ProjectLink;
+            var version = new LinkLabel
             {
-                Text = "Version " + Program.VersionText + "  ·  Built " + Program.BuildDate,
+                Text = versionText,
                 ForeColor = Color.Gray,
                 Font = new Font("Segoe UI", 8.5f),
                 AutoSize = true,
+                LinkBehavior = LinkBehavior.HoverUnderline,
                 Location = new Point(20, hint.Bottom + 4),
+            };
+            version.Links.Clear();
+            if (Program.UpdateRepo != null)
+            {
+                version.Links.Add(versionText.IndexOf(UpdatesLink), UpdatesLink.Length, "updates");
+                version.Links.Add(versionText.IndexOf(ProjectLink), ProjectLink.Length, "project");
+            }
+            version.LinkClicked += (sender, e) =>
+            {
+                if ((string)e.Link.LinkData == "updates") tray.CheckForUpdates(true);
+                else tray.OpenProjectPage();
             };
             Controls.Add(version);
             ClientSize = new Size(ClientSize.Width, version.Bottom + 12);
