@@ -1,6 +1,10 @@
 # Krabbz9999 Blynclight App Control
 
-A small Windows tray app for controlling an [Embrava Blynclight](https://embrava.com) USB status light directly over USB. No Embrava account, API key or admin rights needed.
+**One app for your [Embrava Blynclight](https://embrava.com) and [Luxafor Flag](https://luxafor.com) busy lights, together.**
+
+A small Windows tray app that controls USB busy lights directly over USB. Plug in any mix of Blynclights and Luxafor Flags, as many of each as you like, and they all show the same color at the same time. It replaces both Embrava Connect and Luxafor's own app. No vendor accounts or admin rights needed.
+
+📖 **[Full guide in the wiki](https://github.com/showtechclove1/Krabbz9999-Blynclight/wiki)**: every feature and how to use it.
 
 ## ⬇️ [Download the installer (latest version)](https://github.com/showtechclove1/Krabbz9999-Blynclight/releases/latest/download/Krabbz9999-Blynclight-App-Control.msi)
 
@@ -8,16 +12,16 @@ Release notes and older versions: [Releases](https://github.com/showtechclove1/K
 
 ## Features
 
-- **Tray icon** that shows the light's current color (it flashes along with the light)
-- **Right-click menu:** Red (Busy Mode), Green (Open Mode), Cycling Colors (Party Mode), Off, Follow Teams Status
-- **Party Mode:** cycles smoothly through the full color wheel, about once every 2.4 seconds
-- **Control window** with a color swatch and buttons (open from the Start menu or by double-clicking the tray icon)
-- **Global hotkeys:** `Alt+R` = Red, `Alt+G` = Green
-- **Follow Teams Status:** the light shows your Teams status: green Available, red Busy / In a call, purple Do not disturb, yellow Away. With **Connect to Microsoft Teams** (tray menu) the app reads your status itself every 20 seconds, so Embrava Connect isn't needed; without it, the light is handed back to Embrava Connect.
-- **Connect to Microsoft Teams:** one-time Microsoft sign-in in your browser (delegated `Presence.ReadWrite`, no client secret; the token is encrypted to your Windows account). Also shows you as Busy / In a call in Teams during Cytracom phone calls. Needs builds made with `-GraphClientId` and `-GraphTenantId` from an Entra app registration.
-- **Calls:** turns red while the Cytracom Desktop softphone or Microsoft Teams (new or classic) is on a call (detected from Windows' microphone-in-use record, no API token needed), then returns to your color. Picking a color during a call overrides it until the call ends.
-- Remembers the last color and re-applies it when the light is plugged back in
-- Opens at sign-in (window plus tray icon)
+- **Embrava Blynclight + Luxafor Flag together:** every connected light shows the same color; lights plugged in later are matched within seconds. The window shows what's connected (e.g. *Lights: Blynclight + 2 Luxafor*).
+- **Red (Busy Mode) / Green (Open Mode)** from the window, tray menu or global hotkeys `Alt+R` / `Alt+G`
+- **Party Mode:** cycles smoothly through the full color wheel on every light
+- **Red whenever you're on a call:** any app using your microphone (Teams, Zoom, Cytracom, browser calls…) turns the lights red, then back afterward. An ignore list handles recorders and noise-cancelling tools.
+- **Follow Teams Status:** green Available, red Busy / In a call, purple Do not disturb, yellow Away, off when Offline
+- **Connect to Microsoft Teams:** one-time browser sign-in (delegated `Presence.ReadWrite`, no client secret, token encrypted to your Windows account). Reads your Teams status and shows you as *Busy, In a call* in Teams during calls in other apps.
+- **Setup checklist** on first run, including setting up the Teams app for other organizations
+- **Notifications** when the lights change (can be turned off)
+- **Automatic, silent updates** from this repo's Releases, verified against GitHub's SHA-256 digest
+- Opens at sign-in, with a tray icon that matches the lights
 
 Windows doesn't let installers pin apps to the Start menu. Pin it yourself (right-click the Start menu entry → **Pin to Start**), or push a Start pins policy through Intune/Group Policy on managed machines.
 
