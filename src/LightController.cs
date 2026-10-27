@@ -13,7 +13,7 @@ namespace Krabbz.Blynclight
         public const int PartyHueStep = 15;
         // During a call flash, switch between red and blue this often.
         const int CallFlashMs = 300;
-        // Look for newly plugged-in or removed lights this often.
+        // Look for newly plugged-in or removed lights, and re-send the current color, this often.
         const int DeviceCheckMs = 2000;
 
         readonly object sync = new object();
@@ -174,7 +174,10 @@ namespace Krabbz.Blynclight
                         countChanged = found.Count != knownLights.Count;
                         knownLights = found;
                     }
-                    if (newLight) Apply(current);
+                    // Re-send the solid color every check, not just when a light is plugged in: another program
+                    // (or a write that raced the first device scan) can leave a light showing the wrong color.
+                    current = ShownState;
+                    Apply(current);
                     if ((newLight || countChanged) && LightsChanged != null) LightsChanged();
                 }
 
