@@ -187,7 +187,8 @@ namespace Krabbz.Blynclight
                 if (LightState.IsValid(saved)) return saved;
             }
             catch (IOException) { }
-            return LightState.Off;
+            // New installs follow Teams status until the user picks something else.
+            return LightState.FollowTeams;
         }
 
         void SaveState(string newState)

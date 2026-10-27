@@ -69,6 +69,9 @@ namespace Krabbz.Blynclight
 
             var setup = new Button { Text = "Setup checklist...", Bounds = new Rectangle(20, y, 150, 34) };
             setup.Click += delegate { tray.ShowSetup(); };
+            var help = new Button { Text = "Help", Bounds = new Rectangle(180, y, 90, 34) };
+            help.Click += delegate { tray.OpenHelp(); };
+            Controls.Add(help);
             var close = new Button { Text = "Close", DialogResult = DialogResult.Cancel, Bounds = new Rectangle(width - 120, y, 100, 34) };
             close.Click += delegate { Close(); };
             Controls.Add(setup);

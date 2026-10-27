@@ -155,6 +155,7 @@ namespace Krabbz.Blynclight
             {
                 menu.Items.Add("Check for updates", null, delegate { CheckForUpdates(true); });
                 menu.Items.Add("Project page on GitHub", null, delegate { OpenProjectPage(); });
+                menu.Items.Add("Help (user guide)", null, delegate { OpenHelp(); });
             }
             menu.Items.Add("Exit tray app", null, delegate { Application.Exit(); });
 
@@ -336,6 +337,12 @@ namespace Krabbz.Blynclight
         }
 
         // Downloads and installs a newer release in the background. Only a manual check reports "up to date" or errors.
+        // The user guide lives in the repo's docs folder.
+        public void OpenHelp()
+        {
+            if (Program.UpdateRepo != null) System.Diagnostics.Process.Start("https://github.com/" + Program.UpdateRepo + "/blob/main/docs/README.md");
+        }
+
         public void OpenProjectPage()
         {
             if (Program.UpdateRepo != null) System.Diagnostics.Process.Start("https://github.com/" + Program.UpdateRepo);
@@ -710,10 +717,10 @@ namespace Krabbz.Blynclight
             };
             Controls.Add(hint);
 
-            // "Version x · Built y · Check for updates · Project page", the last two as links.
+            // "Version x · Built y", then a second line of links: Check for updates · Project page · Help.
             string versionText = "Version " + Program.VersionText + "  ·  Built " + Program.BuildDate;
-            const string UpdatesLink = "Check for updates", ProjectLink = "Project page";
-            if (Program.UpdateRepo != null) versionText += "  ·  " + UpdatesLink + "  ·  " + ProjectLink;
+            const string UpdatesLink = "Check for updates", ProjectLink = "Project page", HelpLink = "Help";
+            if (Program.UpdateRepo != null) versionText += "\n" + UpdatesLink + "  ·  " + ProjectLink + "  ·  " + HelpLink;
             var version = new LinkLabel
             {
                 Text = versionText,
@@ -728,10 +735,12 @@ namespace Krabbz.Blynclight
             {
                 version.Links.Add(versionText.IndexOf(UpdatesLink), UpdatesLink.Length, "updates");
                 version.Links.Add(versionText.IndexOf(ProjectLink), ProjectLink.Length, "project");
+                version.Links.Add(versionText.LastIndexOf(HelpLink), HelpLink.Length, "help");
             }
             version.LinkClicked += (sender, e) =>
             {
                 if ((string)e.Link.LinkData == "updates") tray.CheckForUpdates(true);
+                else if ((string)e.Link.LinkData == "help") tray.OpenHelp();
                 else tray.OpenProjectPage();
             };
             Controls.Add(version);
