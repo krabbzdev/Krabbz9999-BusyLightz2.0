@@ -19,6 +19,9 @@ namespace Krabbz.Blynclight
         public static string BuildDate { get { return Metadata("BuildDate") ?? "unknown"; } }
         // GitHub "owner/repo" whose releases this build updates from; null disables auto-update.
         public static string UpdateRepo { get { return Metadata("UpdateRepo"); } }
+        // Entra app registration for setting Teams presence; null hides the feature.
+        public static string GraphClientId { get { return Metadata("GraphClientId"); } }
+        public static string GraphTenantId { get { return Metadata("GraphTenantId"); } }
 
         static string Metadata(string key)
         {
@@ -92,6 +95,9 @@ namespace Krabbz.Blynclight
         readonly CallDetector calls;
         // App the current call is in ("Cytracom" or "Teams"), or null when not on a call.
         string callApp;
+        // Sets Teams to Busy during Cytracom calls; null when this build has no Entra app registration.
+        readonly TeamsPresence presence;
+        ToolStripMenuItem presenceItem;
         readonly System.Threading.Timer updateTimer;
         int updateCheckRunning;
         readonly NotifyIcon tray;
@@ -119,6 +125,13 @@ namespace Krabbz.Blynclight
             AddStateItem(menu, "Off", LightState.Off);
             AddStateItem(menu, "Follow Teams Status", LightState.FollowTeams);
             menu.Items.Add(new ToolStripSeparator());
+            if (Program.GraphClientId != null && Program.GraphTenantId != null)
+            {
+                presence = new TeamsPresence(Program.GraphClientId, Program.GraphTenantId, message => ShowBalloon(message, ToolTipIcon.Warning));
+                presenceItem = new ToolStripMenuItem("Set Teams to Busy during phone calls", null, delegate { TogglePresence(); });
+                menu.Items.Add(presenceItem);
+                menu.Items.Add(new ToolStripSeparator());
+            }
             menu.Items.Add("Version " + Program.VersionText).Enabled = false;
             if (Program.UpdateRepo != null) menu.Items.Add("Check for updates", null, delegate { CheckForUpdates(true); });
             menu.Items.Add("Exit tray app", null, delegate { Application.Exit(); });
@@ -149,6 +162,12 @@ namespace Krabbz.Blynclight
                     messages.BeginInvoke((Action)delegate
                     {
                         bool wasOverriding = light.OverrideActive;
+                        // Teams already shows its own calls as Busy; only phone calls need presence set.
+                        if (presence != null)
+                        {
+                            if (app == "Cytracom") presence.CallStarted();
+                            else if (callApp == "Cytracom") presence.CallEnded();
+                        }
                         callApp = app;
                         light.SetOverride(app != null ? LightState.Red : null);
                         if (app == null && wasOverriding && light.State == LightState.FollowTeams) HandBackToTeams();
@@ -240,6 +259,54 @@ namespace Krabbz.Blynclight
             Refresh();
         }
 
+        // Signs in (browser) to turn the feature on, or signs out to turn it off.
+        void TogglePresence()
+        {
+            if (presence.SignedIn)
+            {
+                ThreadPool.QueueUserWorkItem(delegate { presence.SignOut(); });
+                ShowBalloon("Signed out. Teams presence won't be changed during phone calls.", ToolTipIcon.Info);
+                UpdateDisplay();
+                return;
+            }
+            presenceItem.Enabled = false;
+            presenceItem.Text = "Signing in to Microsoft (check your browser)...";
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                string message;
+                ToolTipIcon icon = ToolTipIcon.Info;
+                try
+                {
+                    presence.SignIn();
+                    message = "Signed in as " + presence.Account + ". Teams will show you as Busy during phone calls.";
+                    if (callApp == "Cytracom") presence.CallStarted();
+                }
+                catch (Exception ex)
+                {
+                    message = ex.Message;
+                    icon = ToolTipIcon.Warning;
+                }
+                try
+                {
+                    messages.BeginInvoke((Action)delegate
+                    {
+                        presenceItem.Enabled = true;
+                        presenceItem.Text = "Set Teams to Busy during phone calls";
+                        UpdateDisplay();
+                    });
+                }
+                catch (InvalidOperationException) { } // Window already gone during exit.
+                ShowBalloon(message, icon);
+            });
+        }
+
+        // Safe to call from any thread.
+        void ShowBalloon(string message, ToolTipIcon icon)
+        {
+            try { messages.BeginInvoke((Action)delegate { tray.ShowBalloonTip(5000, Program.AppName, message, icon); }); }
+            catch (InvalidOperationException) { } // Window already gone during exit.
+        }
+
         // Restarts Embrava Connect so it repaints the light from current Teams/Calendar presence.
         void HandBackToTeams()
         {
@@ -294,6 +361,11 @@ namespace Krabbz.Blynclight
             tray.Text = tip.Length > 63 ? tip.Substring(0, 63) : tip;
             // Check the user's own choice, even while a call is overriding it.
             foreach (var pair in stateItems) pair.Value.Checked = pair.Key == light.State;
+            if (presenceItem != null)
+            {
+                presenceItem.Checked = presence.SignedIn;
+                presenceItem.ToolTipText = presence.SignedIn ? "Signed in as " + presence.Account + ". Click to sign out." : "Click to sign in to Microsoft.";
+            }
             if (DisplayChanged != null) DisplayChanged();
         }
 
@@ -321,6 +393,7 @@ namespace Krabbz.Blynclight
         {
             for (int id = 0; id < HotkeyStates.Length; id++) UnregisterHotKey(messages.Handle, id);
             calls.Dispose();
+            if (presence != null) presence.Dispose(); // Clears Busy if a phone call is in progress.
             if (updateTimer != null) updateTimer.Dispose();
             showWait.Unregister(null);
             light.Dispose();

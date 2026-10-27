@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   Builds the Blynclight tray app and its per-user MSI (no admin rights needed).
   Output: dist\Krabbz9999-Blynclight-App-Control-<version>.msi
@@ -12,6 +12,10 @@ param(
     [string]$Version,
     # GitHub owner/repo the app checks for newer releases; empty disables auto-update.
     [string]$UpdateRepo = 'showtechclove1/Krabbz9999-Blynclight',
+    # Entra app registration (Application and Directory IDs) for "Set Teams to Busy during phone calls".
+    # Not secrets. Leave empty to build without the feature.
+    [string]$GraphClientId = '',
+    [string]$GraphTenantId = '',
     # Publish the MSI as a GitHub release (needs GitHub CLI, signed in).
     [switch]$Publish
 )
@@ -83,13 +87,15 @@ using System.Reflection;
 [assembly: AssemblyInformationalVersion("$Version")]
 [assembly: AssemblyMetadata("BuildDate", "$(Get-Date -Format 'yyyy-MM-dd')")]
 [assembly: AssemblyMetadata("UpdateRepo", "$UpdateRepo")]
+[assembly: AssemblyMetadata("GraphClientId", "$GraphClientId")]
+[assembly: AssemblyMetadata("GraphTenantId", "$GraphTenantId")]
 "@ | Set-Content "$build\AssemblyInfo.cs" -Encoding utf8
 
 Write-Host 'Compiling tray app...'
 Invoke-Tool $csc @('/nologo', '/optimize+', '/target:winexe', "/win32icon:$icon",
     "/out:$build\Krabbz9999 Blynclight App Control.exe",
-    '/reference:System.Core.dll', '/reference:System.Drawing.dll', '/reference:System.Windows.Forms.dll', '/reference:System.Web.Extensions.dll',
-    "$src\BlyncCore.cs", "$src\LightController.cs", "$src\TrayApp.cs", "$src\Updater.cs", "$src\CallDetector.cs", "$src\EmbravaConnect.cs", "$build\AssemblyInfo.cs")
+    '/reference:System.Core.dll', '/reference:System.Drawing.dll', '/reference:System.Windows.Forms.dll', '/reference:System.Web.Extensions.dll', '/reference:System.Web.dll', '/reference:System.Security.dll',
+    "$src\BlyncCore.cs", "$src\LightController.cs", "$src\TrayApp.cs", "$src\Updater.cs", "$src\CallDetector.cs", "$src\EmbravaConnect.cs", "$src\TeamsPresence.cs", "$build\AssemblyInfo.cs")
 
 Write-Host 'Building MSI...'
 Invoke-Tool "$wix\candle.exe" @('-nologo', '-arch', 'x64', '-ext', 'WixUtilExtension',
