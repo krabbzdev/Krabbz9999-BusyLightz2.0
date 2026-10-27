@@ -89,6 +89,7 @@ namespace Krabbz.Blynclight
         const int UpdateCheckMs = 6 * 60 * 60 * 1000;
 
         readonly LightController light = new LightController();
+        readonly CallDetector calls;
         readonly System.Threading.Timer updateTimer;
         int updateCheckRunning;
         readonly NotifyIcon tray;
@@ -100,7 +101,8 @@ namespace Krabbz.Blynclight
         ControlForm form;
         bool flashRed = true;
 
-        public string State { get { return light.State; } }
+        // What the light is showing right now (red during a softphone call).
+        public string State { get { return light.ShownState; } }
         public Color DisplayColor { get; private set; }
         public event Action DisplayChanged;
 
@@ -135,6 +137,19 @@ namespace Krabbz.Blynclight
                 try { messages.BeginInvoke((Action)Refresh); }
                 catch (InvalidOperationException) { } // Window already gone during exit.
             };
+            // Red while the Cytracom softphone has the microphone open, then back to the user's color.
+            calls = new CallDetector(onCall =>
+            {
+                try
+                {
+                    messages.BeginInvoke((Action)delegate
+                    {
+                        light.SetOverride(onCall ? LightState.Red : null);
+                        Refresh();
+                    });
+                }
+                catch (InvalidOperationException) { } // Window already gone during exit.
+            });
             if (Program.UpdateRepo != null)
                 updateTimer = new System.Threading.Timer(delegate { CheckForUpdates(false); }, null, UpdateFirstCheckMs, UpdateCheckMs);
             showWait = ThreadPool.RegisterWaitForSingleObject(showSignal,
@@ -227,7 +242,12 @@ namespace Krabbz.Blynclight
 
         public string StatusText
         {
-            get { return light.LightCount == 0 ? "Light not found" : LightState.Describe(State); }
+            get
+            {
+                if (light.LightCount == 0) return "Light not found";
+                if (light.OverrideActive) return "On a call (Busy)";
+                return LightState.Describe(State);
+            }
         }
 
         void UpdateDisplay()
@@ -241,7 +261,8 @@ namespace Krabbz.Blynclight
             tray.Icon = IconFor(DisplayColor);
             string tip = Program.AppName + "\n" + StatusText;
             tray.Text = tip.Length > 63 ? tip.Substring(0, 63) : tip;
-            foreach (var pair in stateItems) pair.Value.Checked = pair.Key == State;
+            // Check the user's own choice, even while a call is overriding it.
+            foreach (var pair in stateItems) pair.Value.Checked = pair.Key == light.State;
             if (DisplayChanged != null) DisplayChanged();
         }
 
@@ -268,6 +289,7 @@ namespace Krabbz.Blynclight
         protected override void ExitThreadCore()
         {
             for (int id = 0; id < HotkeyStates.Length; id++) UnregisterHotKey(messages.Handle, id);
+            calls.Dispose();
             if (updateTimer != null) updateTimer.Dispose();
             showWait.Unregister(null);
             light.Dispose();

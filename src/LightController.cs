@@ -19,6 +19,8 @@ namespace Krabbz.Blynclight
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Krabbz9999 Blynclight");
         readonly Thread lightThread;
         string state;
+        // While set (e.g. red during a phone call), shown instead of the saved state; not saved.
+        string callOverride;
         List<string> knownPaths = new List<string>();
         string lastLogged;
 
@@ -34,14 +36,34 @@ namespace Krabbz.Blynclight
             lightThread.Start();
         }
 
+        // The state the user picked (saved across restarts).
         public string State { get { lock (sync) return state; } }
+        // What the light is actually showing: the call override if one is active, otherwise State.
+        public string ShownState { get { lock (sync) return callOverride ?? state; } }
+        public bool OverrideActive { get { lock (sync) return callOverride != null; } }
         public int LightCount { get { lock (sync) return knownPaths.Count; } }
 
+        // Picking a state by hand also cancels any call override, so a manual choice always wins.
         public void Set(string newState)
         {
-            lock (sync) state = newState;
+            lock (sync)
+            {
+                state = newState;
+                callOverride = null;
+            }
             SaveState(newState);
             Apply(newState);
+        }
+
+        // Shows overrideState until cleared with null, then returns to the saved state.
+        public void SetOverride(string overrideState)
+        {
+            lock (sync)
+            {
+                if (callOverride == overrideState) return;
+                callOverride = overrideState;
+            }
+            Apply(ShownState);
         }
 
         // Stops the background loop. Flashing can't continue without it, so the light is turned off in that case;
@@ -50,7 +72,7 @@ namespace Krabbz.Blynclight
         {
             stopEvent.Set();
             lightThread.Join(2000);
-            if (State == LightState.FlashRedBlue) WriteAll(BlyncDevice.ReportFor(LightState.Off));
+            if (ShownState == LightState.FlashRedBlue) WriteAll(BlyncDevice.ReportFor(LightState.Off));
         }
 
         void LightLoop()
@@ -59,8 +81,7 @@ namespace Krabbz.Blynclight
             int sinceDeviceCheck = DeviceCheckMs;
             do
             {
-                string current;
-                lock (sync) current = state;
+                string current = ShownState;
 
                 if (sinceDeviceCheck >= DeviceCheckMs)
                 {
