@@ -56,7 +56,9 @@
       <ComponentRef Id="StartMenuShortcut" />
     </Feature>
 
-    <!-- Close a running tray app so its file can be replaced or removed. -->
+    <!-- Close a running tray app so its file can be replaced or removed. Restart Manager is turned off so
+         updates don't stop on a "files in use" prompt; CloseApplication handles the app instead. -->
+    <Property Id="MSIRESTARTMANAGERCONTROL" Value="Disable" />
     <util:CloseApplication Id="CloseTrayApp" Target="Krabbz9999 Blynclight App Control.exe"
                            CloseMessage="yes" TerminateProcess="1" RebootPrompt="no" />
 
