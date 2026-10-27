@@ -311,6 +311,7 @@ namespace Krabbz.Blynclight
                 json = Json.Serialize(new Dictionary<string, object>
                 {
                     { "refresh_token", refreshToken }, { "oid", userId }, { "account", account },
+                    { "client_id", clientId }, { "tenant_id", tenantId },
                 });
             }
             Directory.CreateDirectory(Path.GetDirectoryName(tokenPath));
@@ -324,6 +325,10 @@ namespace Krabbz.Blynclight
                 if (!File.Exists(tokenPath)) return;
                 string json = Encoding.UTF8.GetString(ProtectedData.Unprotect(File.ReadAllBytes(tokenPath), null, DataProtectionScope.CurrentUser));
                 var saved = (Dictionary<string, object>)Json.DeserializeObject(json);
+                // A sign-in made with a different organization's app doesn't carry over; sign in again.
+                object savedClient, savedTenant;
+                if (saved.TryGetValue("client_id", out savedClient) && !string.Equals(savedClient as string, clientId, StringComparison.OrdinalIgnoreCase)) return;
+                if (saved.TryGetValue("tenant_id", out savedTenant) && !string.Equals(savedTenant as string, tenantId, StringComparison.OrdinalIgnoreCase)) return;
                 refreshToken = saved["refresh_token"] as string;
                 userId = saved["oid"] as string;
                 account = saved["account"] as string;

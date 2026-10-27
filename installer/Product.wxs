@@ -41,7 +41,19 @@
         <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
         <RemoveFolder Id="RemoveUserProgramsDir" Directory="UserProgramsDir" On="uninstall" />
       </Component>
+
+      <!-- Organization's own Teams app registration, when IT passes TEAMSCLIENTID=... TEAMSTENANTID=... on the command
+           line. Permanent, so silent auto-updates (which don't pass them) keep the IDs. -->
+      <Component Id="TeamsAppIds" Guid="{5C1E8A47-93D2-4F60-B1A8-7E2D46F09C31}" Permanent="yes">
+        <Condition>TEAMSCLIENTID AND TEAMSTENANTID</Condition>
+        <RegistryValue Root="HKCU" Key="Software\Krabbz9999\Blynclight App Control"
+                       Name="TeamsClientId" Type="string" Value="[TEAMSCLIENTID]" KeyPath="yes" />
+        <RegistryValue Root="HKCU" Key="Software\Krabbz9999\Blynclight App Control"
+                       Name="TeamsTenantId" Type="string" Value="[TEAMSTENANTID]" />
+      </Component>
     </DirectoryRef>
+    <Property Id="TEAMSCLIENTID" Secure="yes" />
+    <Property Id="TEAMSTENANTID" Secure="yes" />
 
     <DirectoryRef Id="ProgramMenuFolder">
       <Component Id="StartMenuShortcut" Guid="{A62E0D58-7C19-4B3F-9D84-1E5F3A6B2C70}">
@@ -55,6 +67,7 @@
     <Feature Id="Main" Title="Krabbz9999 Blynclight App Control" Level="1">
       <ComponentRef Id="TrayExe" />
       <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="TeamsAppIds" />
     </Feature>
 
     <!-- Close a running tray app so its file can be replaced or removed. Restart Manager is turned off so

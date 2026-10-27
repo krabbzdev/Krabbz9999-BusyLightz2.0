@@ -12,10 +12,10 @@ param(
     [string]$Version,
     # GitHub owner/repo the app checks for newer releases; empty disables auto-update.
     [string]$UpdateRepo = 'showtechclove1/Krabbz9999-Blynclight',
-    # Entra app registration (Application and Directory IDs) for "Set Teams to Busy during phone calls".
-    # Not secrets. Leave empty to build without the feature.
-    [string]$GraphClientId = '',
-    [string]$GraphTenantId = '',
+    # Entra app registration (Application and Directory IDs) for "Connect to Microsoft Teams", created by
+    # scripts\New-EntraAppRegistration.ps1. Not secrets. Pass empty strings to build without the feature.
+    [string]$GraphClientId = '0213fb00-29af-4f12-a2f9-8b90447266d3',
+    [string]$GraphTenantId = 'e32df814-cde8-4e0e-b51a-f6043d246ca5',
     # Publish the MSI as a GitHub release (needs GitHub CLI, signed in).
     [switch]$Publish
 )
@@ -95,7 +95,7 @@ Write-Host 'Compiling tray app...'
 Invoke-Tool $csc @('/nologo', '/optimize+', '/target:winexe', "/win32icon:$icon",
     "/out:$build\Krabbz9999 Blynclight App Control.exe",
     '/reference:System.Core.dll', '/reference:System.Drawing.dll', '/reference:System.Windows.Forms.dll', '/reference:System.Web.Extensions.dll', '/reference:System.Web.dll', '/reference:System.Security.dll',
-    "$src\BlyncCore.cs", "$src\LightController.cs", "$src\TrayApp.cs", "$src\Updater.cs", "$src\CallDetector.cs", "$src\EmbravaConnect.cs", "$src\TeamsPresence.cs", "$src\SetupForm.cs", "$build\AssemblyInfo.cs")
+    "$src\BlyncCore.cs", "$src\LightController.cs", "$src\TrayApp.cs", "$src\Updater.cs", "$src\CallDetector.cs", "$src\EmbravaConnect.cs", "$src\TeamsPresence.cs", "$src\SetupForm.cs", "$src\TeamsAppConfig.cs", "$build\AssemblyInfo.cs")
 
 Write-Host 'Building MSI...'
 Invoke-Tool "$wix\candle.exe" @('-nologo', '-arch', 'x64', '-ext', 'WixUtilExtension',

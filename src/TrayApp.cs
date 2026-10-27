@@ -96,10 +96,10 @@ namespace Krabbz.Blynclight
 
         readonly LightController light = new LightController();
         readonly CallDetector calls;
-        // App the current call is in ("Cytracom" or "Teams"), or null when not on a call.
-        string callApp;
-        // Sets Teams to Busy during Cytracom calls; null when this build has no Entra app registration.
-        readonly TeamsPresence presence;
+        // App that has the microphone open, or null when not on a call.
+        MicApp callApp;
+        // Reads Teams status and sets Teams to Busy during non-Teams calls; null when no Teams app is configured.
+        TeamsPresence presence;
         ToolStripMenuItem presenceItem;
         readonly System.Threading.Timer teamsPoll;
         // Last Teams availability read while signed in (e.g. "Available"), or null.
@@ -134,13 +134,15 @@ namespace Krabbz.Blynclight
             AddStateItem(menu, "Off", LightState.Off);
             AddStateItem(menu, "Follow Teams Status", LightState.FollowTeams);
             menu.Items.Add(new ToolStripSeparator());
-            if (Program.GraphClientId != null && Program.GraphTenantId != null)
+            presence = CreatePresence();
+            // Without a Teams app for this organization, the item opens the setup checklist to set one up.
+            presenceItem = new ToolStripMenuItem("Connect to Microsoft Teams", null, delegate
             {
-                presence = new TeamsPresence(Program.GraphClientId, Program.GraphTenantId, message => ShowBalloon(message, ToolTipIcon.Warning));
-                presenceItem = new ToolStripMenuItem("Connect to Microsoft Teams", null, delegate { TogglePresence(); });
-                menu.Items.Add(presenceItem);
-                menu.Items.Add(new ToolStripSeparator());
-            }
+                if (presence == null) ShowSetup();
+                else TogglePresence();
+            });
+            menu.Items.Add(presenceItem);
+            menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Setup checklist...", null, delegate { ShowSetup(); });
             menu.Items.Add("Version " + Program.VersionText).Enabled = false;
             if (Program.UpdateRepo != null) menu.Items.Add("Check for updates", null, delegate { CheckForUpdates(true); });
@@ -163,8 +165,8 @@ namespace Krabbz.Blynclight
                 try { messages.BeginInvoke((Action)Refresh); }
                 catch (InvalidOperationException) { } // Window already gone during exit.
             };
-            // Red while the Cytracom softphone or Teams has the microphone open, then back to the user's color
-            // (or back to Embrava Connect when following Teams).
+            // Red while any (non-ignored) app has the microphone open, then back to the user's color
+            // (or back to Teams status when following Teams).
             calls = new CallDetector(app =>
             {
                 try
@@ -172,11 +174,11 @@ namespace Krabbz.Blynclight
                     messages.BeginInvoke((Action)delegate
                     {
                         bool wasOverriding = light.OverrideActive;
-                        // Teams already shows its own calls as Busy; only phone calls need presence set.
+                        // Teams already shows its own calls as Busy; other apps need presence set.
                         if (presence != null)
                         {
-                            if (app == "Cytracom") presence.CallStarted();
-                            else if (callApp == "Cytracom") presence.CallEnded();
+                            if (app != null && !app.IsTeams) presence.CallStarted();
+                            else if (callApp != null && !callApp.IsTeams) presence.CallEnded();
                         }
                         callApp = app;
                         light.SetOverride(app != null ? LightState.Red : null);
@@ -186,8 +188,7 @@ namespace Krabbz.Blynclight
                 }
                 catch (InvalidOperationException) { } // Window already gone during exit.
             });
-            if (presence != null)
-                teamsPoll = new System.Threading.Timer(delegate { PollTeams(); }, null, 0, TeamsPollMs);
+            teamsPoll = new System.Threading.Timer(delegate { PollTeams(); }, null, 0, TeamsPollMs);
             if (Program.UpdateRepo != null)
                 updateTimer = new System.Threading.Timer(delegate { CheckForUpdates(false); }, null, UpdateFirstCheckMs, UpdateCheckMs);
             showWait = ThreadPool.RegisterWaitForSingleObject(showSignal,
@@ -219,6 +220,31 @@ namespace Krabbz.Blynclight
         public void ConnectTeams()
         {
             if (presence != null && !presence.SignedIn) TogglePresence();
+        }
+
+        TeamsPresence CreatePresence()
+        {
+            if (!TeamsAppConfig.Configured) return null;
+            return new TeamsPresence(TeamsAppConfig.ClientId, TeamsAppConfig.TenantId, message => ShowBalloon(message, ToolTipIcon.Warning));
+        }
+
+        // Switches to the Teams app now saved in TeamsAppConfig. Any sign-in with the previous app is dropped.
+        public void ApplyTeamsApp()
+        {
+            var old = presence;
+            presence = null;
+            teamsAvailability = null;
+            light.SetTeamsColor(null);
+            if (old != null)
+            {
+                ThreadPool.QueueUserWorkItem(delegate
+                {
+                    old.SignOut();
+                    old.Dispose();
+                });
+            }
+            presence = CreatePresence();
+            Refresh();
         }
 
         public void ShowSetup()
@@ -349,16 +375,20 @@ namespace Krabbz.Blynclight
             {
                 string message;
                 ToolTipIcon icon = ToolTipIcon.Info;
+                var signingIn = presence;
                 try
                 {
-                    presence.SignIn();
-                    message = "Connected to Teams as " + presence.Account + ". Follow Teams Status now uses your Teams status directly, and Teams shows you as Busy during phone calls.";
-                    if (callApp == "Cytracom") presence.CallStarted();
+                    signingIn.SignIn();
+                    message = "Connected to Teams as " + signingIn.Account + ". Follow Teams Status now uses your Teams status directly, and Teams shows you as Busy during other calls.";
+                    if (callApp != null && !callApp.IsTeams) signingIn.CallStarted();
                     PollTeams();
                 }
                 catch (Exception ex)
                 {
-                    message = ex.Message;
+                    // When the organization has no matching app, Microsoft shows its error in the browser and never
+                    // comes back to the app, so the sign-in times out.
+                    message = ex.Message + " If Microsoft said the application wasn't found, your organization's Teams app " +
+                              "needs setting up: open Setup checklist from the tray menu.";
                     icon = ToolTipIcon.Warning;
                 }
                 try
@@ -472,7 +502,7 @@ namespace Krabbz.Blynclight
             get
             {
                 if (light.LightCount == 0) return "Light not found";
-                if (light.OverrideActive) return callApp == null ? "Testing the light" : "On a " + callApp + " call (Busy)";
+                if (light.OverrideActive) return callApp == null ? "Testing the light" : "On a call (" + callApp.Name + ")";
                 if (light.State == LightState.FollowTeams && teamsAvailability != null) return "Teams: " + DescribeAvailability(teamsAvailability);
                 return LightState.Describe(State);
             }
@@ -503,8 +533,10 @@ namespace Krabbz.Blynclight
             foreach (var pair in stateItems) pair.Value.Checked = pair.Key == light.State;
             if (presenceItem != null)
             {
-                presenceItem.Checked = presence.SignedIn;
-                presenceItem.ToolTipText = presence.SignedIn ? "Connected as " + presence.Account + ". Click to disconnect." : "Sign in to Microsoft so the light follows your Teams status and Teams shows Busy during phone calls.";
+                presenceItem.Checked = presence != null && presence.SignedIn;
+                presenceItem.ToolTipText = presence == null ? "Your organization's Teams app isn't set up yet. Click to open the setup checklist."
+                    : presence.SignedIn ? "Connected as " + presence.Account + ". Click to disconnect."
+                    : "Sign in to Microsoft so the light follows your Teams status and Teams shows Busy during other calls.";
             }
             if (DisplayChanged != null) DisplayChanged();
         }
