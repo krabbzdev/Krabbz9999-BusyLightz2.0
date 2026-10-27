@@ -9,23 +9,23 @@ You control the light from the **app window** or the **tray icon**.
 | **Embrava Blynclight** (USB) | Any Blynclight model that plugs in by USB. |
 | **Luxafor Flag** (USB) | Controlled directly over USB; Luxafor's own app isn't needed. |
 
-You can plug in **any number of each**. They all show the same color at the same time, including Party Mode, calls and Teams status. Lights plugged in later are found within a couple of seconds and set to match. The window shows what's connected, e.g. *Lights: Blynclight + 2 Luxafor*.
+You can plug in **any number of each**. They all show the same color at the same time, including Test Lights, calls and Teams status. Lights plugged in later are found within a couple of seconds and set to match. The window shows what's connected, e.g. *Lights: Blynclight + 2 Luxafor*.
 
 **Use a data cable.** Some USB cables only carry power: the light may glow at plug-in but Windows can't see it, so the app can't control it.
 
 - **Open the window:** double-click the tray icon, or use the Start menu entry.
 - **Closing the window** only hides it. The app keeps running in the tray, and the light keeps working.
-- **The tray icon** is a colored dot that matches the light, including during Party Mode.
+- **The tray icon** is a colored dot that matches the light, including during Test Lights.
 
 ## The window
 
 | Part | What it does |
 | --- | --- |
-| **Current color** | The swatch and text show what the lights are doing right now, e.g. *Red*, *Teams: Available*, *On a call (Zoom)*, *Party mode*, *Light not found*. Underneath: which lights are connected. |
+| **Current color** | The swatch and text show what the lights are doing right now, e.g. *Red*, *Teams: Available*, *On a call (Zoom)*, *Test lights*, *Light not found*. Underneath: which lights are connected. |
 | **Red (Alt+R) / Busy Mode** | Sets the light red for 1 hour, then back to Follow Teams Status (see [Override timer](#override-timer)). |
 | **Green (Alt+G) / Open Mode** | Sets the light green for 1 hour, then back to Follow Teams Status. |
 | **On A Call / Flashing red/blue** | Flashes red and blue quickly for 1 hour, then back to Follow Teams Status. Handy for a call the app can't detect, such as a desk phone. |
-| **Cycling Colors / PARTY MODE** | Smoothly cycles through every color, about once every 2.4 seconds. |
+| **Test Lights / Cycling Colors** | Smoothly cycles through every color, about once every 2.4 seconds. Handy for checking every light is working and matched. |
 | **Off** | Turns the light off. |
 | **Follow Teams Status** | The light shows your Microsoft Teams status. See [Teams Status](Teams-Status.md). |
 | **Override counter** (under the buttons) | Shows how long until Red, Green or On A Call goes back to Teams status, e.g. *Back to Teams status in 42:10*. Click **Back to Teams now** to go back early. |
@@ -47,7 +47,7 @@ Red, Green and On A Call *override* your Teams status, so it's easy to forget on
 | **Open Krabbz9999-BusyLightz2.0** | Opens the window. |
 | **Red (Busy Mode) [Override Color]** / **Green (Open Mode) [Override Color]** | Same as the window buttons. "Override" because they take over from Teams status for 1 hour (see [Override timer](#override-timer)). |
 | **On A Call (flashing red/blue)** | Same as the window's On A Call button. |
-| **Cycling Colors (PARTY MODE)** | Party Mode. |
+| **Test Lights (Cycling Colors)** | Same as the window's Test Lights button. |
 | **Off** | Light off. |
 | **Follow Teams Status** | Light follows Teams. |
 | **Connect to Microsoft Teams** | Sign in so the app can read your Teams status (ticked when connected; click again to disconnect). |
@@ -57,7 +57,7 @@ Red, Green and On A Call *override* your Teams status, so it's easy to forget on
 | **Check for updates** | Looks for a newer version now. |
 | **Project page on GitHub** | Opens this project's page. |
 | **Help (user guide)** | Opens this guide. |
-| **Exit tray app** | Closes the app. The light stays on its last color (Party Mode and flashing turn off). The app starts again at your next sign-in. |
+| **Exit tray app** | Closes the app. The light stays on its last color (Test Lights and flashing turn off). The app starts again at your next sign-in. |
 
 The tick in the menu shows the color *you* chose, even while a call is temporarily showing red.
 
@@ -80,7 +80,7 @@ Whenever what the light shows changes, a notification appears in the bottom-righ
 - *Light set to purple: Teams: Do not disturb.*
 - *No light found. Plug your Blynclight or Luxafor back in.*
 
-Party Mode's color changes don't notify. Turn notifications off in [Settings](#settings).
+Test Lights's color changes don't notify. Turn notifications off in [Settings](#settings).
 
 ## Settings
 
@@ -110,7 +110,7 @@ Open with the **⚙ Settings** button in the window or **Settings...** in the tr
 | 🟡 Yellow | Teams: Away / Be right back |
 | ⚫ Off | Off, or Teams: Offline |
 | 🔴🔵 Flashing red/blue | On a call (detected, or the On A Call button) |
-| 🌈 Cycling | Party Mode |
+| 🌈 Cycling | Test Lights |
 
 ---
 [Guide home](README.md) · [Installing and Updating](Installing-and-Updating.md) · [Using the Light](Using-the-Light.md) · [Teams Status](Teams-Status.md) · [Call Detection](Call-Detection.md) · [Setup Checklist](Setup-Checklist.md) · [Setting Up Teams for Your Organization](Setting-Up-Teams-for-Your-Organization.md) · [Troubleshooting and FAQ](Troubleshooting-and-FAQ.md) · [For Developers](For-Developers.md)

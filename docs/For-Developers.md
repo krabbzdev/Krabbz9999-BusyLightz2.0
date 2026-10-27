@@ -38,7 +38,7 @@ GitHub records a SHA-256 digest for each upload. The app refuses any download th
 | Path | What it is |
 | --- | --- |
 | `src/BlyncCore.cs` | USB/HID discovery, Blynclight and Luxafor report formats, light states, color wheel |
-| `src/LightController.cs` | Saved state, Party Mode cycling, call and Teams overrides, replug detection |
+| `src/LightController.cs` | Saved state, Test Lights (Party) cycling, call and Teams overrides, replug detection |
 | `src/TrayApp.cs` | Tray icon and menu, hotkeys, main window, notifications, wiring |
 | `src/SetupForm.cs` | Setup checklist, Teams app dialog, ignore-apps dialog |
 | `src/SettingsForm.cs`, `src/AppSettings.cs` | Settings window and the stored settings (HKCU), including the sign-in startup entry |

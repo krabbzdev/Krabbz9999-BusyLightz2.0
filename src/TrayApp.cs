@@ -140,7 +140,7 @@ namespace Krabbz.Blynclight
             AddStateItem(menu, "Red (Busy Mode) [Override Color]", LightState.Red);
             AddStateItem(menu, "Green (Open Mode) [Override Color]", LightState.Green);
             AddStateItem(menu, "On A Call (flashing red/blue)", LightState.CallFlash);
-            AddStateItem(menu, "Cycling Colors (PARTY MODE)", LightState.Party);
+            AddStateItem(menu, "Test Lights (Cycling Colors)", LightState.Party);
             AddStateItem(menu, "Off", LightState.Off);
             AddStateItem(menu, "Follow Teams Status", LightState.FollowTeams);
             menu.Items.Add(new ToolStripSeparator());
@@ -658,7 +658,7 @@ namespace Krabbz.Blynclight
 
             string message;
             if (light.LightCount == 0) message = "No light found. Plug your Blynclight or Luxafor back in.";
-            else if (State == LightState.Party) message = "Light set to Party Mode.";
+            else if (State == LightState.Party) message = "Testing the lights: cycling through every color.";
             else if (State == LightState.FollowTeams) message = "Light handed to Embrava Connect to show your Teams status.";
             else if (State == LightState.Off) message = "Light turned off.";
             else if (State == LightState.CallFlash) message = "Light flashing red and blue: " + StatusText + ".";
@@ -754,7 +754,7 @@ namespace Krabbz.Blynclight
             AddButton("Red", "(Busy Mode)", LightState.Red, 20, 100, 175, 54);
             AddButton("Green", "(Open Mode)", LightState.Green, 205, 100, 175, 54);
             AddButton("On A Call", "(Flashing red/blue)", LightState.CallFlash, 20, 164, 175, 54);
-            AddButton("Cycling Colors", "PARTY MODE", LightState.Party, 205, 164, 175, 54);
+            AddButton("Test Lights", "(Cycling Colors)", LightState.Party, 205, 164, 175, 54);
             AddButton("Off", null, LightState.Off, 20, 228, 175, 40);
             AddButton("Follow Teams Status", null, LightState.FollowTeams, 205, 228, 175, 40);
 
