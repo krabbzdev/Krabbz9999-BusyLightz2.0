@@ -48,7 +48,7 @@ namespace Krabbz.Blynclight
 
             Directory.CreateDirectory(updateDir);
             foreach (var old in Directory.GetFiles(updateDir, "*.msi")) File.Delete(old);
-            string path = Path.Combine(updateDir, "Krabbz9999-Blynclight-App-Control-" + latest + ".msi");
+            string path = Path.Combine(updateDir, "Krabbz9999-BusyLightz2.0-" + latest + ".msi");
             using (var web = NewClient()) web.DownloadFile((string)msi["browser_download_url"], path);
 
             if (!string.Equals(Sha256(path), expected, StringComparison.OrdinalIgnoreCase))
@@ -88,7 +88,7 @@ namespace Krabbz.Blynclight
         static WebClient NewClient()
         {
             var web = new WebClient();
-            web.Headers[HttpRequestHeader.UserAgent] = "Krabbz9999-Blynclight-App-Control";
+            web.Headers[HttpRequestHeader.UserAgent] = "Krabbz9999-BusyLightz2.0";
             return web;
         }
 

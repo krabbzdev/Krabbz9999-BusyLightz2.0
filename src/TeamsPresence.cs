@@ -371,7 +371,7 @@ namespace Krabbz.Blynclight
         static void Respond(Stream stream, bool isReply)
         {
             string html = isReply
-                ? "<html><body style=\"font-family:Segoe UI,sans-serif;padding:40px\"><h2>Krabbz9999 Blynclight App Control</h2>" +
+                ? "<html><body style=\"font-family:Segoe UI,sans-serif;padding:40px\"><h2>Krabbz9999-BusyLightz2.0</h2>" +
                   "<p>Sign-in finished. You can close this tab.</p></body></html>"
                 : "";
             byte[] body = Encoding.UTF8.GetBytes(html);

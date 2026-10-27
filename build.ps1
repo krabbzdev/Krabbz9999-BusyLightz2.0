@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
-  Builds the Blynclight tray app and its per-user MSI (no admin rights needed).
-  Output: dist\Krabbz9999-Blynclight-App-Control-<version>.msi
+  Builds Krabbz9999-BusyLightz2.0 (tray app) and its per-user MSI (no admin rights needed).
+  Output: dist\Krabbz9999-BusyLightz2.0-<version>.msi
 
 .EXAMPLE
   .\build.ps1 -Version 2.0.3            # build only
@@ -80,8 +80,8 @@ if (-not (Test-Path $icon)) { New-AppIcon $icon }
 # Stamp the version and build date into the exe; the app shows them in its window and tray menu.
 @"
 using System.Reflection;
-[assembly: AssemblyTitle("Krabbz9999 Blynclight App Control")]
-[assembly: AssemblyProduct("Krabbz9999 Blynclight App Control")]
+[assembly: AssemblyTitle("Krabbz9999-BusyLightz2.0")]
+[assembly: AssemblyProduct("Krabbz9999-BusyLightz2.0")]
 [assembly: AssemblyVersion("$Version.0")]
 [assembly: AssemblyFileVersion("$Version.0")]
 [assembly: AssemblyInformationalVersion("$Version")]
@@ -92,6 +92,7 @@ using System.Reflection;
 "@ | Set-Content "$build\AssemblyInfo.cs" -Encoding utf8
 
 Write-Host 'Compiling tray app...'
+# The exe keeps its original file name: installed copies relaunch themselves by exe path after updating.
 Invoke-Tool $csc @('/nologo', '/optimize+', '/target:winexe', "/win32icon:$icon",
     "/out:$build\Krabbz9999 Blynclight App Control.exe",
     '/reference:System.Core.dll', '/reference:System.Drawing.dll', '/reference:System.Windows.Forms.dll', '/reference:System.Web.Extensions.dll', '/reference:System.Web.dll', '/reference:System.Security.dll',
@@ -101,7 +102,7 @@ Write-Host 'Building MSI...'
 Invoke-Tool "$wix\candle.exe" @('-nologo', '-arch', 'x64', '-ext', 'WixUtilExtension',
     "-dVersion=$Version", "-dBuildDir=$build", "-dAssetsDir=$assets",
     '-out', "$build\Product.wixobj", "$root\installer\Product.wxs")
-$msi = Join-Path $dist "Krabbz9999-Blynclight-App-Control-$Version.msi"
+$msi = Join-Path $dist "Krabbz9999-BusyLightz2.0-$Version.msi"
 Invoke-Tool "$wix\light.exe" @('-nologo', '-ext', 'WixUtilExtension', '-spdb', '-out', $msi, "$build\Product.wixobj")
 
 Write-Host "Built $msi"
@@ -110,12 +111,16 @@ if ($Publish) {
     $gh = (Get-Command gh -ErrorAction SilentlyContinue).Source
     if (-not $gh) { $gh = Get-ChildItem "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\GitHub.cli_*\bin\gh.exe" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName }
     if (-not $gh) { throw 'GitHub CLI (gh) not found. Install it with: winget install GitHub.cli' }
-    # Upload under a fixed name so the README's "latest/download" link always gets the newest installer.
+    # Upload under fixed names so "latest/download" links always get the newest installer. The old name is
+    # kept too, so download links shared before the rename keep working.
     $releaseDir = Join-Path $dist 'release'
     New-Item -ItemType Directory -Force $releaseDir | Out-Null
-    $releaseMsi = Join-Path $releaseDir 'Krabbz9999-Blynclight-App-Control.msi'
-    Copy-Item $msi $releaseMsi -Force
+    $releaseMsis = @('Krabbz9999-BusyLightz2.0.msi', 'Krabbz9999-Blynclight-App-Control.msi') | ForEach-Object {
+        $path = Join-Path $releaseDir $_
+        Copy-Item $msi $path -Force
+        $path
+    }
     Write-Host "Publishing release v$Version to $UpdateRepo..."
-    Invoke-Tool $gh @('release', 'create', "v$Version", $releaseMsi, '--repo', $UpdateRepo,
-        '--title', "Version $Version", '--notes', "Krabbz9999 Blynclight App Control $Version")
+    Invoke-Tool $gh (@('release', 'create', "v$Version") + $releaseMsis + @('--repo', $UpdateRepo,
+        '--title', "Version $Version", '--notes', "Krabbz9999-BusyLightz2.0 $Version"))
 }

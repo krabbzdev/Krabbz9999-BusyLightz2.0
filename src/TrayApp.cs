@@ -12,7 +12,9 @@ namespace Krabbz.Blynclight
 {
     static class Program
     {
-        public const string AppName = "Krabbz9999 Blynclight App Control";
+        // Display name. The exe file, install folder, settings folder and registry key keep their original
+        // "Krabbz9999 Blynclight..." names, because installed copies relaunch themselves by exe path after updating.
+        public const string AppName = "Krabbz9999-BusyLightz2.0";
 
         // Stamped by build.ps1 into build\AssemblyInfo.cs.
         public static readonly Version Version = Assembly.GetExecutingAssembly().GetName().Version;

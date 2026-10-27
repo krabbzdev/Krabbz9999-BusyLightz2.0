@@ -1,4 +1,4 @@
-# Krabbz9999 Blynclight App Control
+# Krabbz9999-BusyLightz2.0
 
 **One app for your [Embrava Blynclight](https://embrava.com) and [Luxafor Flag](https://luxafor.com) busy lights, together.**
 
@@ -6,7 +6,7 @@ A small Windows tray app that controls USB busy lights directly over USB. Plug i
 
 📖 **[Full guide in the wiki](https://github.com/showtechclove1/Krabbz9999-BusyLightz2.0/wiki)**: every feature and how to use it.
 
-## ⬇️ [Download the installer (latest version)](https://github.com/showtechclove1/Krabbz9999-BusyLightz2.0/releases/latest/download/Krabbz9999-Blynclight-App-Control.msi)
+## ⬇️ [Download the installer (latest version)](https://github.com/showtechclove1/Krabbz9999-BusyLightz2.0/releases/latest/download/Krabbz9999-BusyLightz2.0.msi)
 
 Release notes and older versions: [Releases](https://github.com/showtechclove1/Krabbz9999-BusyLightz2.0/releases)
 
@@ -28,7 +28,7 @@ Windows doesn't let installers pin apps to the Start menu. Pin it yourself (righ
 
 ## Install
 
-Run the downloaded `Krabbz9999-Blynclight-App-Control.msi`. It installs per user to `%LOCALAPPDATA%\Programs\Krabbz9999 Blynclight App Control` with no admin prompt. Uninstall from **Settings → Apps**.
+Run the downloaded `Krabbz9999-BusyLightz2.0.msi`. It installs per user to `%LOCALAPPDATA%\Programs\Krabbz9999 Blynclight App Control` with no admin prompt. Uninstall from **Settings → Apps**.
 
 ## Updates
 

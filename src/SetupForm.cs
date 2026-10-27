@@ -153,7 +153,7 @@ namespace Krabbz.Blynclight
         const string EntraAppsUrl = "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade";
 
         const string AdminInstructions =
-            "Please create a Microsoft Entra app registration for Krabbz9999 Blynclight App Control (about 3 minutes):\r\n\r\n" +
+            "Please create a Microsoft Entra app registration for Krabbz9999-BusyLightz2.0 (about 3 minutes):\r\n\r\n" +
             "1. Entra admin center > App registrations > New registration.\r\n" +
             "2. Name: Krabbz9999 Blynclight. Supported account types: this organizational directory only (single tenant).\r\n" +
             "3. Redirect URI: platform \"Public client/native (mobile & desktop)\", value http://localhost\r\n" +
