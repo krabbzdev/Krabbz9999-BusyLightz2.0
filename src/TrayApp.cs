@@ -109,9 +109,9 @@ namespace Krabbz.Blynclight
             var menu = new ContextMenuStrip();
             menu.Items.Add("Open " + Program.AppName, null, delegate { ShowWindow(); }).Font = new Font(menu.Font, FontStyle.Bold);
             menu.Items.Add(new ToolStripSeparator());
-            AddStateItem(menu, "Red", LightState.Red);
-            AddStateItem(menu, "Green", LightState.Green);
-            AddStateItem(menu, "Flashing Red / Blue", LightState.FlashRedBlue);
+            AddStateItem(menu, "Red (Busy Mode)", LightState.Red);
+            AddStateItem(menu, "Green (Open Mode)", LightState.Green);
+            AddStateItem(menu, "Flashing Red / Blue (PANIC MODE)", LightState.FlashRedBlue);
             AddStateItem(menu, "Off", LightState.Off);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Version " + Program.VersionText).Enabled = false;
@@ -289,7 +289,7 @@ namespace Krabbz.Blynclight
             this.tray = tray;
             Text = Program.AppName;
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-            ClientSize = new Size(340, 305);
+            ClientSize = new Size(400, 350);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
@@ -307,10 +307,20 @@ namespace Krabbz.Blynclight
             statusLabel.Location = new Point(95, 46);
             Controls.Add(statusLabel);
 
-            AddButton("Red", LightState.Red, 20, 100, 145);
-            AddButton("Green", LightState.Green, 175, 100, 145);
-            AddButton("Flashing Red / Blue", LightState.FlashRedBlue, 20, 150, 300);
-            AddButton("Off", LightState.Off, 20, 200, 300);
+            AddButton("Red", "(Busy Mode)", LightState.Red, 20, 100, 175, 54);
+            AddButton("Green", "(Open Mode)", LightState.Green, 205, 100, 175, 54);
+            AddButton("Flashing Red / Blue", "PANIC MODE", LightState.FlashRedBlue, 20, 164, 360, 54);
+            AddButton("Off", null, LightState.Off, 20, 228, 360, 40);
+
+            var overrideNote = new Label
+            {
+                Text = "Your Teams and Calendar status will override this.",
+                ForeColor = Color.FromArgb(160, 90, 0),
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                AutoSize = true,
+                Location = new Point(20, 280),
+            };
+            Controls.Add(overrideNote);
 
             var hint = new Label
             {
@@ -318,7 +328,7 @@ namespace Krabbz.Blynclight
                 ForeColor = Color.Gray,
                 Font = new Font("Segoe UI", 8.5f),
                 AutoSize = true,
-                Location = new Point(20, 255),
+                Location = new Point(20, 304),
             };
             Controls.Add(hint);
 
@@ -328,7 +338,7 @@ namespace Krabbz.Blynclight
                 ForeColor = Color.Gray,
                 Font = new Font("Segoe UI", 8.5f),
                 AutoSize = true,
-                Location = new Point(20, 277),
+                Location = new Point(20, 324),
             };
             Controls.Add(version);
 
@@ -336,11 +346,13 @@ namespace Krabbz.Blynclight
             RefreshDisplay();
         }
 
-        void AddButton(string text, string state, int x, int y, int width)
+        // subtitle is shown on a second line under the button's main text.
+        void AddButton(string text, string subtitle, string state, int x, int y, int width, int height)
         {
             string keys;
             if (TrayContext.HotkeyText.TryGetValue(state, out keys)) text += "  (" + keys + ")";
-            var button = new Button { Text = text, Bounds = new Rectangle(x, y, width, 40) };
+            if (subtitle != null) text += "\n" + subtitle;
+            var button = new Button { Text = text, Bounds = new Rectangle(x, y, width, height) };
             button.Click += delegate { tray.SetState(state); };
             Controls.Add(button);
         }
