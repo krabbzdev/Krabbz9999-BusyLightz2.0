@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Per-user install: no admin rights needed. Installs to %LOCALAPPDATA%\Programs and starts at sign-in. -->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <Product Id="*"
+           Name="Krabbz9999 Blynclight App Control"
+           Language="1033"
+           Version="$(var.Version)"
+           Manufacturer="Krabbz9999"
+           UpgradeCode="{B7D1A4C2-58E3-4F0B-A96D-2C4E7F81D935}">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" InstallPrivileges="limited"
+             Description="Controls an Embrava Blynclight from a tray app." />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Shortcut icons need to come from an .exe; the tray app embeds app.ico. -->
+    <Icon Id="AppIcon.exe" SourceFile="$(var.BuildDir)\Krabbz9999 Blynclight App Control.exe" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.exe" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="LocalAppDataFolder">
+        <Directory Id="UserProgramsDir" Name="Programs">
+          <Directory Id="INSTALLFOLDER" Name="Krabbz9999 Blynclight App Control" />
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder" />
+    </Directory>
+
+    <!-- Per-user components use an HKCU value as their key path, as Windows Installer requires for profile folders. -->
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="TrayExe" Guid="{3F9C2E71-0B4D-4A86-8E15-D7A2B6C94F03}">
+        <File Id="TrayExe" Name="Krabbz9999 Blynclight App Control.exe"
+              Source="$(var.BuildDir)\Krabbz9999 Blynclight App Control.exe" />
+        <RegistryValue Root="HKCU" Key="Software\Krabbz9999\Blynclight App Control"
+                       Name="InstallFolder" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
+        <!-- Start the app with its window open at sign-in. -->
+        <RegistryValue Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run"
+                       Name="Krabbz9999 Blynclight App Control" Type="string"
+                       Value="&quot;[#TrayExe]&quot;" />
+        <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
+        <RemoveFolder Id="RemoveUserProgramsDir" Directory="UserProgramsDir" On="uninstall" />
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="ProgramMenuFolder">
+      <Component Id="StartMenuShortcut" Guid="{A62E0D58-7C19-4B3F-9D84-1E5F3A6B2C70}">
+        <Shortcut Id="StartMenuShortcut" Name="Krabbz9999 Blynclight App Control"
+                  Target="[#TrayExe]" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon.exe" />
+        <RegistryValue Root="HKCU" Key="Software\Krabbz9999\Blynclight App Control"
+                       Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <Feature Id="Main" Title="Krabbz9999 Blynclight App Control" Level="1">
+      <ComponentRef Id="TrayExe" />
+      <ComponentRef Id="StartMenuShortcut" />
+    </Feature>
+
+    <!-- Close a running tray app so its file can be replaced or removed. -->
+    <util:CloseApplication Id="CloseTrayApp" Target="Krabbz9999 Blynclight App Control.exe"
+                           CloseMessage="yes" TerminateProcess="1" RebootPrompt="no" />
+
+    <!-- Open the app once installation finishes. -->
+    <Property Id="WixShellExecTarget" Value="[#TrayExe]" />
+    <CustomAction Id="LaunchTrayApp" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" Return="ignore" />
+    <InstallUISequence>
+      <Custom Action="LaunchTrayApp" After="ExecuteAction">NOT Installed AND NOT REMOVE</Custom>
+    </InstallUISequence>
+  </Product>
+</Wix>

@@ -1,0 +1,6 @@
+# Build output and installer logs
+build/
+dist/
+
+# WiX toolset binaries (downloaded separately, see README)
+tools/
