@@ -90,6 +90,8 @@ namespace Krabbz.Blynclight
 
         readonly LightController light = new LightController();
         readonly CallDetector calls;
+        // App the current call is in ("Cytracom" or "Teams"), or null when not on a call.
+        string callApp;
         readonly System.Threading.Timer updateTimer;
         int updateCheckRunning;
         readonly NotifyIcon tray;
@@ -138,17 +140,18 @@ namespace Krabbz.Blynclight
                 try { messages.BeginInvoke((Action)Refresh); }
                 catch (InvalidOperationException) { } // Window already gone during exit.
             };
-            // Red while the Cytracom softphone has the microphone open, then back to the user's color
+            // Red while the Cytracom softphone or Teams has the microphone open, then back to the user's color
             // (or back to Embrava Connect when following Teams).
-            calls = new CallDetector(onCall =>
+            calls = new CallDetector(app =>
             {
                 try
                 {
                     messages.BeginInvoke((Action)delegate
                     {
                         bool wasOverriding = light.OverrideActive;
-                        light.SetOverride(onCall ? LightState.Red : null);
-                        if (!onCall && wasOverriding && light.State == LightState.FollowTeams) HandBackToTeams();
+                        callApp = app;
+                        light.SetOverride(app != null ? LightState.Red : null);
+                        if (app == null && wasOverriding && light.State == LightState.FollowTeams) HandBackToTeams();
                         Refresh();
                     });
                 }
@@ -271,7 +274,7 @@ namespace Krabbz.Blynclight
             get
             {
                 if (light.LightCount == 0) return "Light not found";
-                if (light.OverrideActive) return "On a call (Busy)";
+                if (light.OverrideActive) return "On a " + callApp + " call (Busy)";
                 return LightState.Describe(State);
             }
         }
