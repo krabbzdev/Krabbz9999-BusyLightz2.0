@@ -10,7 +10,8 @@
            UpgradeCode="{B7D1A4C2-58E3-4F0B-A96D-2C4E7F81D935}">
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" InstallPrivileges="limited"
              Description="Controls an Embrava Blynclight from a tray app." />
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <!-- Same-version upgrades too, so reinstalling a rebuilt version replaces it instead of adding a second entry. -->
+    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
     <!-- Shortcut icons need to come from an .exe; the tray app embeds app.ico. -->

@@ -113,7 +113,8 @@ namespace Krabbz.Blynclight
         readonly Dictionary<Color, Icon> icons = new Dictionary<Color, Icon>();
         readonly Dictionary<string, ToolStripMenuItem> stateItems = new Dictionary<string, ToolStripMenuItem>();
         ControlForm form;
-        bool flashRed = true;
+        // Where the tray icon and swatch are on the color wheel in Party Mode.
+        int partyHue;
 
         // What the light is showing right now (red during a softphone call).
         public string State { get { return light.ShownState; } }
@@ -127,7 +128,7 @@ namespace Krabbz.Blynclight
             menu.Items.Add(new ToolStripSeparator());
             AddStateItem(menu, "Red (Busy Mode)", LightState.Red);
             AddStateItem(menu, "Green (Open Mode)", LightState.Green);
-            AddStateItem(menu, "Flashing Red / Blue (PANIC MODE)", LightState.FlashRedBlue);
+            AddStateItem(menu, "Cycling Colors (PARTY MODE)", LightState.Party);
             AddStateItem(menu, "Off", LightState.Off);
             AddStateItem(menu, "Follow Teams Status", LightState.FollowTeams);
             menu.Items.Add(new ToolStripSeparator());
@@ -147,9 +148,9 @@ namespace Krabbz.Blynclight
             tray.DoubleClick += delegate { ShowWindow(); };
             tray.Visible = true;
 
-            // Swap the tray icon at the light's rate so it flashes along with the light.
-            flashTimer.Interval = LightController.AlternateMs;
-            flashTimer.Tick += delegate { flashRed = !flashRed; UpdateDisplay(); };
+            // Cycle the tray icon round the color wheel at the light's speed, in half as many steps.
+            flashTimer.Interval = LightController.PartyStepMs * 2;
+            flashTimer.Tick += delegate { partyHue = (partyHue + LightController.PartyHueStep * 2) % 360; UpdateDisplay(); };
 
             RegisterHotkeys();
             Refresh();
@@ -409,9 +410,9 @@ namespace Krabbz.Blynclight
 
         void Refresh()
         {
-            bool flashing = State == LightState.FlashRedBlue && light.LightCount > 0;
-            if (flashing && !flashTimer.Enabled) flashRed = true;
-            flashTimer.Enabled = flashing;
+            bool partying = State == LightState.Party && light.LightCount > 0;
+            if (partying && !flashTimer.Enabled) partyHue = 0;
+            flashTimer.Enabled = partying;
             UpdateDisplay();
         }
 
@@ -431,7 +432,12 @@ namespace Krabbz.Blynclight
             if (light.LightCount == 0) DisplayColor = Color.Gray;
             else if (State == LightState.Red) DisplayColor = Color.Red;
             else if (State == LightState.Green) DisplayColor = Color.Lime;
-            else if (State == LightState.FlashRedBlue) DisplayColor = flashRed ? Color.Red : Color.Blue;
+            else if (State == LightState.Party)
+            {
+                byte r, g, b;
+                BlyncDevice.HueToRgb(partyHue, out r, out g, out b);
+                DisplayColor = Color.FromArgb(r, g, b);
+            }
             // Teams status colors, when the app reads presence itself.
             else if (State == "yellow") DisplayColor = Color.Gold;
             else if (State == "purple") DisplayColor = Color.MediumPurple;
@@ -519,7 +525,7 @@ namespace Krabbz.Blynclight
 
             AddButton("Red", "(Busy Mode)", LightState.Red, 20, 100, 175, 54);
             AddButton("Green", "(Open Mode)", LightState.Green, 205, 100, 175, 54);
-            AddButton("Flashing Red / Blue", "PANIC MODE", LightState.FlashRedBlue, 20, 164, 360, 54);
+            AddButton("Cycling Colors", "PARTY MODE", LightState.Party, 20, 164, 360, 54);
             AddButton("Off", null, LightState.Off, 20, 228, 175, 40);
             AddButton("Follow Teams Status", null, LightState.FollowTeams, 205, 228, 175, 40);
 

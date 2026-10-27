@@ -5,11 +5,12 @@ using System.Threading;
 
 namespace Krabbz.Blynclight
 {
-    // Owns the light: remembers its state, alternates red/blue while flashing, and re-applies the state when a light is plugged in.
+    // Owns the light: remembers its state, cycles colors in Party Mode, and re-applies the state when a light is plugged in.
     public class LightController : IDisposable
     {
-        // Swap colors this often while flashing red/blue.
-        public const int AlternateMs = 400;
+        // Party Mode moves this far round the color wheel every PartyStepMs: a full cycle about every 2.4 seconds.
+        public const int PartyStepMs = 100;
+        public const int PartyHueStep = 15;
         // Look for newly plugged-in or removed lights this often.
         const int DeviceCheckMs = 2000;
 
@@ -93,18 +94,18 @@ namespace Krabbz.Blynclight
             Apply(ShownState);
         }
 
-        // Stops the background loop. Flashing can't continue without it, so the light is turned off in that case;
-        // the saved state is kept so flashing resumes next time the app starts.
+        // Stops the background loop. Party Mode can't continue without it, so the light is turned off in that case;
+        // the saved state is kept so it resumes next time the app starts.
         public void Dispose()
         {
             stopEvent.Set();
             lightThread.Join(2000);
-            if (ShownState == LightState.FlashRedBlue) WriteAll(BlyncDevice.ReportFor(LightState.Off));
+            if (ShownState == LightState.Party) WriteAll(BlyncDevice.ReportFor(LightState.Off));
         }
 
         void LightLoop()
         {
-            bool showRed = true;
+            int hue = 0;
             int sinceDeviceCheck = DeviceCheckMs;
             do
             {
@@ -125,20 +126,22 @@ namespace Krabbz.Blynclight
                     if ((newLight || countChanged) && LightsChanged != null) LightsChanged();
                 }
 
-                if (current == LightState.FlashRedBlue)
+                if (current == LightState.Party)
                 {
-                    WriteAll(BlyncDevice.ReportFor(showRed ? "red" : "blue"));
-                    showRed = !showRed;
+                    byte r, g, b;
+                    BlyncDevice.HueToRgb(hue, out r, out g, out b);
+                    WriteAll(BlyncDevice.ReportForRgb(r, g, b));
+                    hue = (hue + PartyHueStep) % 360;
                 }
-                sinceDeviceCheck += AlternateMs;
-            } while (!stopEvent.WaitOne(AlternateMs));
+                sinceDeviceCheck += PartyStepMs;
+            } while (!stopEvent.WaitOne(PartyStepMs));
         }
 
         void Apply(string newState)
         {
-            // Flashing is driven by LightLoop; solid states are written once. In FollowTeams the light
-            // belongs to Embrava Connect, so nothing is written.
-            if (newState != LightState.FlashRedBlue && newState != LightState.FollowTeams)
+            // Party Mode is driven by LightLoop; solid states are written once. In FollowTeams without a
+            // Teams color the light belongs to Embrava Connect, so nothing is written.
+            if (newState != LightState.Party && newState != LightState.FollowTeams)
                 WriteAll(BlyncDevice.ReportFor(newState));
         }
 
@@ -160,6 +163,7 @@ namespace Krabbz.Blynclight
             try
             {
                 string saved = File.ReadAllText(StatePath).Trim();
+                if (saved == LightState.LegacyFlashRedBlue) return LightState.Party;
                 if (LightState.IsValid(saved)) return saved;
             }
             catch (IOException) { }

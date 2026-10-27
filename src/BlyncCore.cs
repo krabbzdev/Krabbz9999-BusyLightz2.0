@@ -11,14 +11,17 @@ namespace Krabbz.Blynclight
     {
         public const string Red = "red";
         public const string Green = "green";
-        public const string FlashRedBlue = "flash-red-blue";
+        // Cycles quickly through the color wheel.
+        public const string Party = "party";
+        // Saved by versions before Party Mode replaced red/blue flashing; loaded as Party.
+        public const string LegacyFlashRedBlue = "flash-red-blue";
         public const string Off = "off";
         // The app leaves the light alone so Embrava Connect can show Teams/Calendar presence.
         public const string FollowTeams = "teams";
 
         public static bool IsValid(string state)
         {
-            return state == Red || state == Green || state == FlashRedBlue || state == Off || state == FollowTeams;
+            return state == Red || state == Green || state == Party || state == Off || state == FollowTeams;
         }
 
         public static string Describe(string state)
@@ -27,7 +30,7 @@ namespace Krabbz.Blynclight
             {
                 case Red: return "Red";
                 case Green: return "Green";
-                case FlashRedBlue: return "Flashing red / blue";
+                case Party: return "Party mode";
                 case Off: return "Off";
                 case FollowTeams: return "Following Teams status";
                 default: return "Unknown";
@@ -125,6 +128,28 @@ namespace Krabbz.Blynclight
                 case "yellow": return Report(255, 255, 0, false);
                 case "purple": return Report(128, 0, 255, false);
                 default: return Report(0, 0, 0, true);
+            }
+        }
+
+        public static byte[] ReportForRgb(byte r, byte g, byte b)
+        {
+            return Report(r, g, b, false);
+        }
+
+        // Fully saturated, full-brightness color at a point on the color wheel (0 = red, 120 = green, 240 = blue).
+        public static void HueToRgb(int hue, out byte r, out byte g, out byte b)
+        {
+            hue = ((hue % 360) + 360) % 360;
+            int rising = (int)Math.Round(255.0 * (hue % 60) / 60);
+            int falling = 255 - rising;
+            switch (hue / 60)
+            {
+                case 0: r = 255; g = (byte)rising; b = 0; break;
+                case 1: r = (byte)falling; g = 255; b = 0; break;
+                case 2: r = 0; g = 255; b = (byte)rising; break;
+                case 3: r = 0; g = (byte)falling; b = 255; break;
+                case 4: r = (byte)rising; g = 0; b = 255; break;
+                default: r = 255; g = 0; b = (byte)falling; break;
             }
         }
 

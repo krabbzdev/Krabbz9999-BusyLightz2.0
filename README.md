@@ -9,7 +9,8 @@ Release notes and older versions: [Releases](https://github.com/showtechclove1/K
 ## Features
 
 - **Tray icon** that shows the light's current color (it flashes along with the light)
-- **Right-click menu:** Red, Green, Flashing Red / Blue, Off
+- **Right-click menu:** Red (Busy Mode), Green (Open Mode), Cycling Colors (Party Mode), Off, Follow Teams Status
+- **Party Mode:** cycles smoothly through the full color wheel, about once every 2.4 seconds
 - **Control window** with a color swatch and buttons (open from the Start menu or by double-clicking the tray icon)
 - **Global hotkeys:** `Alt+R` = Red, `Alt+G` = Green
 - **Follow Teams Status:** the light shows your Teams status: green Available, red Busy / In a call, purple Do not disturb, yellow Away. With **Connect to Microsoft Teams** (tray menu) the app reads your status itself every 20 seconds, so Embrava Connect isn't needed; without it, the light is handed back to Embrava Connect.
