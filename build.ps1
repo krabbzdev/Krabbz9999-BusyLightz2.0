@@ -104,7 +104,12 @@ if ($Publish) {
     $gh = (Get-Command gh -ErrorAction SilentlyContinue).Source
     if (-not $gh) { $gh = Get-ChildItem "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\GitHub.cli_*\bin\gh.exe" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName }
     if (-not $gh) { throw 'GitHub CLI (gh) not found. Install it with: winget install GitHub.cli' }
+    # Upload under a fixed name so the README's "latest/download" link always gets the newest installer.
+    $releaseDir = Join-Path $dist 'release'
+    New-Item -ItemType Directory -Force $releaseDir | Out-Null
+    $releaseMsi = Join-Path $releaseDir 'Krabbz9999-Blynclight-App-Control.msi'
+    Copy-Item $msi $releaseMsi -Force
     Write-Host "Publishing release v$Version to $UpdateRepo..."
-    Invoke-Tool $gh @('release', 'create', "v$Version", $msi, '--repo', $UpdateRepo,
+    Invoke-Tool $gh @('release', 'create', "v$Version", $releaseMsi, '--repo', $UpdateRepo,
         '--title', "Version $Version", '--notes', "Krabbz9999 Blynclight App Control $Version")
 }

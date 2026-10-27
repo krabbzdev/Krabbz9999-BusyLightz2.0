@@ -2,6 +2,10 @@
 
 A small Windows tray app for controlling an [Embrava Blynclight](https://embrava.com) USB status light directly over USB. No Embrava account, API key or admin rights needed.
 
+## ⬇️ [Download the installer (latest version)](https://github.com/showtechclove1/Krabbz9999-Blynclight-App-Control/releases/latest/download/Krabbz9999-Blynclight-App-Control.msi)
+
+Release notes and older versions: [Releases](https://github.com/showtechclove1/Krabbz9999-Blynclight-App-Control/releases)
+
 ## Features
 
 - **Tray icon** that shows the light's current color (it flashes along with the light)
@@ -15,7 +19,13 @@ Windows doesn't let installers pin apps to the Start menu. Pin it yourself (righ
 
 ## Install
 
-Run `Krabbz9999-Blynclight-App-Control-<version>.msi`. It installs per user to `%LOCALAPPDATA%\Programs\Krabbz9999 Blynclight App Control` with no admin prompt. Uninstall from **Settings → Apps**.
+Run the downloaded `Krabbz9999-Blynclight-App-Control.msi`. It installs per user to `%LOCALAPPDATA%\Programs\Krabbz9999 Blynclight App Control` with no admin prompt. Uninstall from **Settings → Apps**.
+
+## Updates
+
+The app checks this repo's latest release a minute after it starts and every 6 hours (or use **Check for updates** in the tray menu). A newer installer is downloaded, checked against GitHub's SHA-256 digest, installed silently in the background, and the app reopens with an "Updated to version x" notice.
+
+To publish an update: `.\build.ps1 -Version 2.0.5 -Publish`
 
 The MSI isn't code-signed, so Windows SmartScreen may show an "unknown publisher" warning.
 

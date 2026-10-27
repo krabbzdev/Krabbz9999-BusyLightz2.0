@@ -27,11 +27,13 @@ namespace Krabbz.Blynclight
             return null;
         }
 
-        // Usage: no args opens the window (also used at sign-in); --tray starts in the tray only.
+        // Usage: no args opens the window (also used at sign-in); --tray starts in the tray only;
+        // --updated (added after an auto-update) shows an "Updated to version x" notice.
         [STAThread]
         static int Main(string[] args)
         {
-            bool trayOnly = args.Length > 0 && args[0] == "--tray";
+            bool trayOnly = Array.IndexOf(args, "--tray") >= 0;
+            bool justUpdated = Array.IndexOf(args, "--updated") >= 0;
             bool firstInstance;
             using (var mutex = new Mutex(true, @"Local\Krabbz9999BlynclightTray", out firstInstance))
             using (var showSignal = new EventWaitHandle(false, EventResetMode.AutoReset, @"Local\Krabbz9999BlynclightShow"))
@@ -44,7 +46,7 @@ namespace Krabbz.Blynclight
                 }
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new TrayContext(showSignal, !trayOnly));
+                Application.Run(new TrayContext(showSignal, !trayOnly, justUpdated));
             }
             return 0;
         }
@@ -102,7 +104,7 @@ namespace Krabbz.Blynclight
         public Color DisplayColor { get; private set; }
         public event Action DisplayChanged;
 
-        public TrayContext(EventWaitHandle showSignal, bool showWindow)
+        public TrayContext(EventWaitHandle showSignal, bool showWindow, bool justUpdated)
         {
             var menu = new ContextMenuStrip();
             menu.Items.Add("Open " + Program.AppName, null, delegate { ShowWindow(); }).Font = new Font(menu.Font, FontStyle.Bold);
@@ -138,6 +140,8 @@ namespace Krabbz.Blynclight
             showWait = ThreadPool.RegisterWaitForSingleObject(showSignal,
                 delegate { messages.BeginInvoke((Action)ShowWindow); }, null, -1, false);
             if (showWindow) ShowWindow();
+            if (justUpdated)
+                tray.ShowBalloonTip(5000, Program.AppName, "Updated to version " + Program.VersionText + ".", ToolTipIcon.Info);
         }
 
         void AddStateItem(ContextMenuStrip menu, string text, string state)
@@ -193,7 +197,8 @@ namespace Krabbz.Blynclight
                     {
                         if (update != null)
                         {
-                            Updater.Install(update);
+                            // Reopen the way the user had it: window showing, or tray only.
+                            Updater.Install(update, Application.ExecutablePath, form != null && form.Visible);
                             Application.Exit();
                         }
                         else if (manual)

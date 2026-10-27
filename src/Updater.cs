@@ -59,11 +59,21 @@ namespace Krabbz.Blynclight
             return new UpdateInfo { Version = latest, MsiPath = path };
         }
 
-        // Starts the per-user MSI. It closes this app, upgrades it, and reopens it; no admin rights needed.
-        public static void Install(UpdateInfo update)
+        // Installs the per-user MSI silently from a hidden helper, then reopens the app. The caller must exit right away:
+        // the helper waits a couple of seconds so the app's file isn't in use when the installer replaces it.
+        public static void Install(UpdateInfo update, string appPath, bool showWindow)
         {
             string log = Path.Combine(updateDir, "install-" + update.Version + ".log");
-            Process.Start("msiexec.exe", "/i \"" + update.MsiPath + "\" /l*v \"" + log + "\"");
+            string relaunchArgs = (showWindow ? "" : "--tray ") + "--updated";
+            string script =
+                "ping -n 3 127.0.0.1 >nul" +
+                " & start \"\" /wait msiexec.exe /i \"" + update.MsiPath + "\" /qn /l*v \"" + log + "\"" +
+                " & start \"\" \"" + appPath + "\" " + relaunchArgs;
+            var helper = new ProcessStartInfo("cmd.exe", "/c " + script);
+            helper.UseShellExecute = false;
+            helper.CreateNoWindow = true;
+            helper.WindowStyle = ProcessWindowStyle.Hidden;
+            Process.Start(helper);
         }
 
         static string Get(string url)
