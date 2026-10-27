@@ -109,8 +109,10 @@ namespace Krabbz.Blynclight
 
         void Apply(string newState)
         {
-            // Flashing is driven by LightLoop; solid states are written once.
-            if (newState != LightState.FlashRedBlue) WriteAll(BlyncDevice.ReportFor(newState));
+            // Flashing is driven by LightLoop; solid states are written once. In FollowTeams the light
+            // belongs to Embrava Connect, so nothing is written.
+            if (newState != LightState.FlashRedBlue && newState != LightState.FollowTeams)
+                WriteAll(BlyncDevice.ReportFor(newState));
         }
 
         void WriteAll(byte[] report)

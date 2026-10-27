@@ -89,7 +89,7 @@ Write-Host 'Compiling tray app...'
 Invoke-Tool $csc @('/nologo', '/optimize+', '/target:winexe', "/win32icon:$icon",
     "/out:$build\Krabbz9999 Blynclight App Control.exe",
     '/reference:System.Core.dll', '/reference:System.Drawing.dll', '/reference:System.Windows.Forms.dll', '/reference:System.Web.Extensions.dll',
-    "$src\BlyncCore.cs", "$src\LightController.cs", "$src\TrayApp.cs", "$src\Updater.cs", "$src\CallDetector.cs", "$build\AssemblyInfo.cs")
+    "$src\BlyncCore.cs", "$src\LightController.cs", "$src\TrayApp.cs", "$src\Updater.cs", "$src\CallDetector.cs", "$src\EmbravaConnect.cs", "$build\AssemblyInfo.cs")
 
 Write-Host 'Building MSI...'
 Invoke-Tool "$wix\candle.exe" @('-nologo', '-arch', 'x64', '-ext', 'WixUtilExtension',

@@ -115,6 +115,7 @@ namespace Krabbz.Blynclight
             AddStateItem(menu, "Green (Open Mode)", LightState.Green);
             AddStateItem(menu, "Flashing Red / Blue (PANIC MODE)", LightState.FlashRedBlue);
             AddStateItem(menu, "Off", LightState.Off);
+            AddStateItem(menu, "Follow Teams Status", LightState.FollowTeams);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Version " + Program.VersionText).Enabled = false;
             if (Program.UpdateRepo != null) menu.Items.Add("Check for updates", null, delegate { CheckForUpdates(true); });
@@ -137,14 +138,17 @@ namespace Krabbz.Blynclight
                 try { messages.BeginInvoke((Action)Refresh); }
                 catch (InvalidOperationException) { } // Window already gone during exit.
             };
-            // Red while the Cytracom softphone has the microphone open, then back to the user's color.
+            // Red while the Cytracom softphone has the microphone open, then back to the user's color
+            // (or back to Embrava Connect when following Teams).
             calls = new CallDetector(onCall =>
             {
                 try
                 {
                     messages.BeginInvoke((Action)delegate
                     {
+                        bool wasOverriding = light.OverrideActive;
                         light.SetOverride(onCall ? LightState.Red : null);
+                        if (!onCall && wasOverriding && light.State == LightState.FollowTeams) HandBackToTeams();
                         Refresh();
                     });
                 }
@@ -229,7 +233,29 @@ namespace Krabbz.Blynclight
         public void SetState(string state)
         {
             light.Set(state);
+            if (state == LightState.FollowTeams) HandBackToTeams();
             Refresh();
+        }
+
+        // Restarts Embrava Connect so it repaints the light from current Teams/Calendar presence.
+        void HandBackToTeams()
+        {
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                bool installed;
+                try { installed = EmbravaConnect.Restart(); }
+                catch (Exception) { installed = false; }
+                if (installed) return;
+                try
+                {
+                    messages.BeginInvoke((Action)delegate
+                    {
+                        tray.ShowBalloonTip(5000, Program.AppName,
+                            "Embrava Connect isn't installed, so nothing is showing your Teams status on the light.", ToolTipIcon.Warning);
+                    });
+                }
+                catch (InvalidOperationException) { } // Window already gone during exit.
+            });
         }
 
         void Refresh()
@@ -256,6 +282,8 @@ namespace Krabbz.Blynclight
             else if (State == LightState.Red) DisplayColor = Color.Red;
             else if (State == LightState.Green) DisplayColor = Color.Lime;
             else if (State == LightState.FlashRedBlue) DisplayColor = flashRed ? Color.Red : Color.Blue;
+            // The real color is up to Embrava Connect; show Teams purple to mean "Teams decides".
+            else if (State == LightState.FollowTeams) DisplayColor = Color.FromArgb(98, 100, 167);
             else DisplayColor = Color.Black;
 
             tray.Icon = IconFor(DisplayColor);
@@ -332,7 +360,8 @@ namespace Krabbz.Blynclight
             AddButton("Red", "(Busy Mode)", LightState.Red, 20, 100, 175, 54);
             AddButton("Green", "(Open Mode)", LightState.Green, 205, 100, 175, 54);
             AddButton("Flashing Red / Blue", "PANIC MODE", LightState.FlashRedBlue, 20, 164, 360, 54);
-            AddButton("Off", null, LightState.Off, 20, 228, 360, 40);
+            AddButton("Off", null, LightState.Off, 20, 228, 175, 40);
+            AddButton("Follow Teams Status", null, LightState.FollowTeams, 205, 228, 175, 40);
 
             var overrideNote = new Label
             {

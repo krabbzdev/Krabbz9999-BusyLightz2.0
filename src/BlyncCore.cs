@@ -13,10 +13,12 @@ namespace Krabbz.Blynclight
         public const string Green = "green";
         public const string FlashRedBlue = "flash-red-blue";
         public const string Off = "off";
+        // The app leaves the light alone so Embrava Connect can show Teams/Calendar presence.
+        public const string FollowTeams = "teams";
 
         public static bool IsValid(string state)
         {
-            return state == Red || state == Green || state == FlashRedBlue || state == Off;
+            return state == Red || state == Green || state == FlashRedBlue || state == Off || state == FollowTeams;
         }
 
         public static string Describe(string state)
@@ -27,6 +29,7 @@ namespace Krabbz.Blynclight
                 case Green: return "Green";
                 case FlashRedBlue: return "Flashing red / blue";
                 case Off: return "Off";
+                case FollowTeams: return "Following Teams status";
                 default: return "Unknown";
             }
         }
