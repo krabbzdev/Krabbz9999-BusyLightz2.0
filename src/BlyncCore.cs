@@ -18,10 +18,12 @@ namespace Krabbz.Blynclight
         public const string Off = "off";
         // The app leaves the light alone so Embrava Connect can show Teams/Calendar presence.
         public const string FollowTeams = "teams";
+        // Flashes red and blue: shown while the mic is in use, or picked by hand with the On A Call button.
+        public const string CallFlash = "call-flash";
 
         public static bool IsValid(string state)
         {
-            return state == Red || state == Green || state == Party || state == Off || state == FollowTeams;
+            return state == Red || state == Green || state == Party || state == Off || state == FollowTeams || state == CallFlash;
         }
 
         public static string Describe(string state)
@@ -33,6 +35,7 @@ namespace Krabbz.Blynclight
                 case Party: return "Party mode";
                 case Off: return "Off";
                 case FollowTeams: return "Following Teams status";
+                case CallFlash: return "On a call";
                 default: return "Unknown";
             }
         }

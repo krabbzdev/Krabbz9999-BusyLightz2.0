@@ -15,7 +15,7 @@ A small Windows app that controls USB busy lights, so the people around you can 
 ## What it does
 
 - **Shows your status on the light:** pick Red (Busy) or Green (Open) yourself, or let the light follow your Microsoft Teams status.
-- **Turns red whenever you're on a call:** any app using your microphone (Teams, Zoom, Cytracom, a browser call and so on) turns the light red, then it goes back when you hang up.
+- **Flashes whenever you're on a call:** any app using your microphone (Teams, Zoom, Cytracom, a browser call and so on) makes the light flash red and blue (or steady red, if you prefer), then it goes back when you hang up.
 - **Tells Teams you're busy:** during calls in other apps, such as a Cytracom phone call, Teams shows you as *Busy, In a call*.
 - **Party Mode:** cycles through every color the light can show.
 - **Works with several lights at once:** every Blynclight and Luxafor Flag on the PC shows the same color, including ones plugged in later.

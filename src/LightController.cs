@@ -11,6 +11,8 @@ namespace Krabbz.Blynclight
         // Party Mode moves this far round the color wheel every PartyStepMs: a full cycle about every 2.4 seconds.
         public const int PartyStepMs = 100;
         public const int PartyHueStep = 15;
+        // During a call flash, switch between red and blue this often.
+        const int CallFlashMs = 300;
         // Look for newly plugged-in or removed lights this often.
         const int DeviceCheckMs = 2000;
 
@@ -25,6 +27,9 @@ namespace Krabbz.Blynclight
         // Color for the user's Teams status, shown in FollowTeams when the app reads presence itself.
         // Null means Embrava Connect is driving the light instead.
         string teamsColor;
+        // When a color picked by hand (Red, Green, On A Call) goes back to following Teams, in UTC; null for never.
+        // Saved, so the timer keeps running across restarts.
+        DateTime? returnToTeamsAt;
         List<LightDevice> knownLights = new List<LightDevice>();
         string lastLogged;
 
@@ -35,6 +40,7 @@ namespace Krabbz.Blynclight
         {
             Directory.CreateDirectory(dataDir);
             state = LoadState();
+            returnToTeamsAt = LoadReturnToTeams();
             lightThread = new Thread(LightLoop);
             lightThread.IsBackground = true;
             lightThread.Start();
@@ -77,7 +83,16 @@ namespace Krabbz.Blynclight
             }
         }
 
+        // Colors picked by hand that override Teams status, so they go back to following Teams after a while.
+        public static bool OverridesTeams(string state)
+        {
+            return state == LightState.Red || state == LightState.Green || state == LightState.CallFlash;
+        }
+
+        public DateTime? ReturnToTeamsAt { get { lock (sync) return returnToTeamsAt; } }
+
         // Picking a state by hand also cancels any call override, so a manual choice always wins.
+        // It also cancels any return-to-Teams timer; the caller starts a new one if needed.
         public void Set(string newState)
         {
             lock (sync)
@@ -86,7 +101,19 @@ namespace Krabbz.Blynclight
                 callOverride = null;
             }
             SaveState(newState);
+            SetReturnToTeams(null);
             Apply(newState);
+        }
+
+        public void SetReturnToTeams(DateTime? utc)
+        {
+            lock (sync) returnToTeamsAt = utc;
+            try
+            {
+                if (utc == null) File.Delete(ReturnToTeamsPath);
+                else File.WriteAllText(ReturnToTeamsPath, utc.Value.Ticks.ToString());
+            }
+            catch (Exception ex) { Log("Could not save the return-to-Teams time: " + ex.Message); }
         }
 
         // Shows overrideState until cleared with null, then returns to the saved state.
@@ -112,18 +139,24 @@ namespace Krabbz.Blynclight
             Apply(ShownState);
         }
 
-        // Stops the background loop. Party Mode can't continue without it, so the light is turned off in that case;
-        // the saved state is kept so it resumes next time the app starts.
+        // Stops the background loop. Party Mode and call flashing can't continue without it, so the light is turned
+        // off in those cases; the saved state is kept so it resumes next time the app starts.
         public void Dispose()
         {
             stopEvent.Set();
             lightThread.Join(2000);
-            if (ShownState == LightState.Party) WriteAll(LightColor.Off);
+            if (Animated(ShownState)) WriteAll(LightColor.Off);
+        }
+
+        static bool Animated(string shown)
+        {
+            return shown == LightState.Party || shown == LightState.CallFlash;
         }
 
         void LightLoop()
         {
             int hue = 0;
+            int flashMs = 0;
             int sinceDeviceCheck = DeviceCheckMs;
             do
             {
@@ -152,15 +185,23 @@ namespace Krabbz.Blynclight
                     WriteAll(LightColor.Rgb(r, g, b));
                     hue = (hue + PartyHueStep) % 360;
                 }
+                if (current == LightState.CallFlash)
+                {
+                    // Write every tick so a light plugged in mid-call joins in; the color flips every CallFlashMs.
+                    bool red = (flashMs / CallFlashMs) % 2 == 0;
+                    WriteAll(BlyncDevice.ColorFor(red ? LightState.Red : "blue"));
+                    flashMs += PartyStepMs;
+                }
+                else flashMs = 0;
                 sinceDeviceCheck += PartyStepMs;
             } while (!stopEvent.WaitOne(PartyStepMs));
         }
 
         void Apply(string newState)
         {
-            // Party Mode is driven by LightLoop; solid states are written once. In FollowTeams without a
-            // Teams color the light belongs to Embrava Connect, so nothing is written.
-            if (newState != LightState.Party && newState != LightState.FollowTeams)
+            // Party Mode and call flashing are driven by LightLoop; solid states are written once. In FollowTeams
+            // without a Teams color the light belongs to Embrava Connect, so nothing is written.
+            if (!Animated(newState) && newState != LightState.FollowTeams)
                 WriteAll(BlyncDevice.ColorFor(newState));
         }
 
@@ -177,6 +218,18 @@ namespace Krabbz.Blynclight
         }
 
         string StatePath { get { return Path.Combine(dataDir, "state.txt"); } }
+        string ReturnToTeamsPath { get { return Path.Combine(dataDir, "return-to-teams.txt"); } }
+
+        DateTime? LoadReturnToTeams()
+        {
+            try
+            {
+                long ticks;
+                if (long.TryParse(File.ReadAllText(ReturnToTeamsPath).Trim(), out ticks)) return new DateTime(ticks, DateTimeKind.Utc);
+            }
+            catch (IOException) { }
+            return null;
+        }
 
         string LoadState()
         {

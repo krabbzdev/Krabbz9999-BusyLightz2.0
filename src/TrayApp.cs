@@ -95,6 +95,8 @@ namespace Krabbz.Blynclight
         const int UpdateCheckMs = 6 * 60 * 60 * 1000;
         // How often to read Teams presence while following Teams status.
         const int TeamsPollMs = 20 * 1000;
+        // Red, Green and On A Call go back to Follow Teams Status after this long (can be turned off in Settings).
+        public const int OverrideMinutes = 60;
 
         readonly LightController light = new LightController();
         readonly CallDetector calls;
@@ -114,6 +116,8 @@ namespace Krabbz.Blynclight
         readonly NotifyIcon tray;
         readonly MessageWindow messages = new MessageWindow();
         readonly System.Windows.Forms.Timer flashTimer = new System.Windows.Forms.Timer();
+        // Counts down a color override and switches back to Follow Teams Status when it runs out.
+        readonly System.Windows.Forms.Timer overrideTimer = new System.Windows.Forms.Timer { Interval = 1000 };
         readonly RegisteredWaitHandle showWait;
         readonly Dictionary<Color, Icon> icons = new Dictionary<Color, Icon>();
         readonly Dictionary<string, ToolStripMenuItem> stateItems = new Dictionary<string, ToolStripMenuItem>();
@@ -135,6 +139,7 @@ namespace Krabbz.Blynclight
             menu.Items.Add(new ToolStripSeparator());
             AddStateItem(menu, "Red (Busy Mode) [Override Color]", LightState.Red);
             AddStateItem(menu, "Green (Open Mode) [Override Color]", LightState.Green);
+            AddStateItem(menu, "On A Call (flashing red/blue)", LightState.CallFlash);
             AddStateItem(menu, "Cycling Colors (PARTY MODE)", LightState.Party);
             AddStateItem(menu, "Off", LightState.Off);
             AddStateItem(menu, "Follow Teams Status", LightState.FollowTeams);
@@ -172,6 +177,10 @@ namespace Krabbz.Blynclight
             messages.HotkeyPressed += id => SetState(HotkeyStates[id]);
             // Installs and updates rewrite the sign-in startup entry; put back the user's choice.
             try { AppSettings.ApplyStartup(); } catch (Exception) { }
+            // An override saved by a version without the timer gets a fresh hour from now.
+            StartOverrideTimerIfNeeded();
+            overrideTimer.Tick += delegate { CheckOverride(); };
+            overrideTimer.Start();
             Refresh();
 
             light.LightsChanged += delegate
@@ -258,11 +267,14 @@ namespace Krabbz.Blynclight
             setupForm.Activate();
         }
 
-        // Shows red for a few seconds so the user can see the light respond, unless a real call is in progress.
+        // What the lights show during a call: flashing red/blue, or steady red.
+        static string CallState { get { return AppSettings.FlashOnCalls ? LightState.CallFlash : LightState.Red; } }
+
+        // Shows the call color for a few seconds so the user can see the light respond, unless a real call is in progress.
         public void TestLight()
         {
             if (light.OverrideActive) return;
-            light.SetOverride(LightState.Red);
+            light.SetOverride(CallState);
             Refresh();
             var timer = new System.Windows.Forms.Timer { Interval = 3000 };
             timer.Tick += delegate
@@ -285,7 +297,7 @@ namespace Krabbz.Blynclight
             }
             var shown = AppSettings.CallsTurnRed ? app : null;
             callApp = shown;
-            light.SetOverride(shown != null ? LightState.Red : null);
+            light.SetOverride(shown != null ? CallState : null);
             if (shown == null && wasOverriding && light.State == LightState.FollowTeams) HandBackToTeams();
             Refresh();
         }
@@ -294,6 +306,9 @@ namespace Krabbz.Blynclight
         public void ApplySettings()
         {
             calls.Recheck();
+            if (AppSettings.OverrideTimesOut) StartOverrideTimerIfNeeded();
+            else light.SetReturnToTeams(null);
+            Refresh();
             for (int id = 0; id < HotkeyStates.Length; id++) UnregisterHotKey(messages.Handle, id);
             if (AppSettings.HotkeysEnabled) RegisterHotkeys();
         }
@@ -387,8 +402,52 @@ namespace Krabbz.Blynclight
         public void SetState(string state)
         {
             light.Set(state);
+            StartOverrideTimerIfNeeded();
             if (state == LightState.FollowTeams) HandBackToTeams();
             Refresh();
+        }
+
+        void StartOverrideTimerIfNeeded()
+        {
+            if (AppSettings.OverrideTimesOut && LightController.OverridesTeams(light.State) && light.ReturnToTeamsAt == null)
+                light.SetReturnToTeams(DateTime.UtcNow.AddMinutes(OverrideMinutes));
+        }
+
+        // e.g. "Back to Teams status in 59:12", or null when no override timer is running.
+        public string OverrideCountdown
+        {
+            get
+            {
+                var at = light.ReturnToTeamsAt;
+                if (at == null || !AppSettings.OverrideTimesOut) return null;
+                var left = at.Value - DateTime.UtcNow;
+                if (left < TimeSpan.Zero) left = TimeSpan.Zero;
+                return "Back to Teams status in " + (int)left.TotalMinutes + ":" + left.Seconds.ToString("00");
+            }
+        }
+
+        void UpdateTooltip()
+        {
+            string tip = Program.AppName + "\n" + StatusText;
+            string countdown = OverrideCountdown;
+            if (countdown != null) tip += "\n" + countdown;
+            tray.Text = tip.Length > 63 ? tip.Substring(0, 63) : tip;
+        }
+
+        void CheckOverride()
+        {
+            var at = light.ReturnToTeamsAt;
+            if (at == null || !AppSettings.OverrideTimesOut) return;
+            if (DateTime.UtcNow >= at.Value)
+            {
+                string overridden = LightState.Describe(light.State);
+                SetState(LightState.FollowTeams);
+                ShowBalloon("The " + overridden + " override ran for " + OverrideMinutes +
+                    " minutes, so the lights are following your Teams status again.", ToolTipIcon.Info);
+                return;
+            }
+            UpdateTooltip();
+            if (DisplayChanged != null) DisplayChanged();
         }
 
         // Signs in (browser) to connect to Teams, or signs out to disconnect.
@@ -557,7 +616,8 @@ namespace Krabbz.Blynclight
         void UpdateDisplay()
         {
             if (light.LightCount == 0) DisplayColor = Color.Gray;
-            else if (State == LightState.Red) DisplayColor = Color.Red;
+            // A flashing call shows as red in the tray and window; flashing an icon would be distracting.
+            else if (State == LightState.Red || State == LightState.CallFlash) DisplayColor = Color.Red;
             else if (State == LightState.Green) DisplayColor = Color.Lime;
             else if (State == LightState.Party)
             {
@@ -573,8 +633,7 @@ namespace Krabbz.Blynclight
             else DisplayColor = Color.Black;
 
             tray.Icon = IconFor(DisplayColor);
-            string tip = Program.AppName + "\n" + StatusText;
-            tray.Text = tip.Length > 63 ? tip.Substring(0, 63) : tip;
+            UpdateTooltip();
             // Check the user's own choice, even while a call is overriding it.
             foreach (var pair in stateItems) pair.Value.Checked = pair.Key == light.State;
             if (presenceItem != null)
@@ -602,6 +661,7 @@ namespace Krabbz.Blynclight
             else if (State == LightState.Party) message = "Light set to Party Mode.";
             else if (State == LightState.FollowTeams) message = "Light handed to Embrava Connect to show your Teams status.";
             else if (State == LightState.Off) message = "Light turned off.";
+            else if (State == LightState.CallFlash) message = "Light flashing red and blue: " + StatusText + ".";
             else
             {
                 string color = State; // "red", "green", "purple", "yellow"
@@ -655,6 +715,8 @@ namespace Krabbz.Blynclight
         readonly Label statusLabel = new Label();
         // Which lights are connected, e.g. "Lights: Blynclight + Luxafor".
         readonly Label lightsLabel = new Label();
+        readonly LinkLabel overrideLabel = new LinkLabel();
+        const string BackNowLink = "Back to Teams now";
 
         public ControlForm(TrayContext tray)
         {
@@ -691,9 +753,20 @@ namespace Krabbz.Blynclight
 
             AddButton("Red", "(Busy Mode)", LightState.Red, 20, 100, 175, 54);
             AddButton("Green", "(Open Mode)", LightState.Green, 205, 100, 175, 54);
-            AddButton("Cycling Colors", "PARTY MODE", LightState.Party, 20, 164, 360, 54);
+            AddButton("On A Call", "(Flashing red/blue)", LightState.CallFlash, 20, 164, 175, 54);
+            AddButton("Cycling Colors", "PARTY MODE", LightState.Party, 205, 164, 175, 54);
             AddButton("Off", null, LightState.Off, 20, 228, 175, 40);
             AddButton("Follow Teams Status", null, LightState.FollowTeams, 205, 228, 175, 40);
+
+            // Override counter: how long until Red / Green / On A Call goes back to Teams status. Hidden otherwise.
+            overrideLabel.AutoSize = true;
+            overrideLabel.Font = new Font("Segoe UI", 9, FontStyle.Bold);
+            overrideLabel.ForeColor = Color.FromArgb(98, 100, 167);
+            overrideLabel.LinkColor = Color.FromArgb(98, 100, 167);
+            overrideLabel.LinkBehavior = LinkBehavior.HoverUnderline;
+            overrideLabel.Location = new Point(20, 278);
+            overrideLabel.LinkClicked += delegate { tray.SetState(LightState.FollowTeams); };
+            Controls.Add(overrideLabel);
 
             var betaNote = new Label
             {
@@ -703,7 +776,7 @@ namespace Krabbz.Blynclight
                 Font = new Font("Segoe UI", 9, FontStyle.Bold),
                 AutoSize = true,
                 MaximumSize = new Size(360, 0), // Wrap within the window.
-                Location = new Point(20, 280),
+                Location = new Point(20, 304),
             };
             Controls.Add(betaNote);
 
@@ -766,6 +839,19 @@ namespace Krabbz.Blynclight
             swatch.BackColor = tray.DisplayColor;
             statusLabel.Text = tray.StatusText;
             lightsLabel.Text = "Lights: " + tray.Light.LightSummary;
+
+            string countdown = tray.OverrideCountdown;
+            overrideLabel.Visible = countdown != null;
+            if (countdown != null)
+            {
+                string text = "⏱ " + countdown + "   ·   " + BackNowLink;
+                if (overrideLabel.Text != text)
+                {
+                    overrideLabel.Text = text;
+                    overrideLabel.Links.Clear();
+                    overrideLabel.Links.Add(text.IndexOf(BackNowLink), BackNowLink.Length);
+                }
+            }
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)

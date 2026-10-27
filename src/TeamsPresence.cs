@@ -233,6 +233,8 @@ namespace Krabbz.Blynclight
                 catch (TokenException ex)
                 {
                     // The sign-in was revoked or expired; the user has to sign in again from the tray menu.
+                    // Microsoft's description (with its AADSTS code) says why, so keep it in app.log.
+                    Log("Microsoft token refresh failed (" + ex.Error + "): " + ex.Message);
                     if (ex.Error == "invalid_grant") SignOut();
                     throw;
                 }
@@ -327,13 +329,28 @@ namespace Krabbz.Blynclight
                 var saved = (Dictionary<string, object>)Json.DeserializeObject(json);
                 // A sign-in made with a different organization's app doesn't carry over; sign in again.
                 object savedClient, savedTenant;
-                if (saved.TryGetValue("client_id", out savedClient) && !string.Equals(savedClient as string, clientId, StringComparison.OrdinalIgnoreCase)) return;
-                if (saved.TryGetValue("tenant_id", out savedTenant) && !string.Equals(savedTenant as string, tenantId, StringComparison.OrdinalIgnoreCase)) return;
+                if ((saved.TryGetValue("client_id", out savedClient) && !string.Equals(savedClient as string, clientId, StringComparison.OrdinalIgnoreCase))
+                    || (saved.TryGetValue("tenant_id", out savedTenant) && !string.Equals(savedTenant as string, tenantId, StringComparison.OrdinalIgnoreCase)))
+                {
+                    Log("Saved Microsoft sign-in was made with a different Teams app; sign in again.");
+                    return;
+                }
                 refreshToken = saved["refresh_token"] as string;
                 userId = saved["oid"] as string;
                 account = saved["account"] as string;
             }
-            catch (Exception) { refreshToken = null; } // Unreadable (e.g. copied from another user); sign in again.
+            catch (Exception ex)
+            {
+                // Unreadable (e.g. copied from another user); sign in again.
+                refreshToken = null;
+                Log("Couldn't read the saved Microsoft sign-in: " + ex.Message);
+            }
+        }
+
+        void Log(string message)
+        {
+            try { File.AppendAllText(Path.Combine(Path.GetDirectoryName(tokenPath), "app.log"), DateTime.Now.ToString("s") + "  " + message + Environment.NewLine); }
+            catch (IOException) { }
         }
 
         // Accepts connections on the loopback listeners until the browser arrives with the sign-in reply.

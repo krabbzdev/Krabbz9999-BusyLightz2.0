@@ -22,24 +22,31 @@ You can plug in **any number of each**. They all show the same color at the same
 | Part | What it does |
 | --- | --- |
 | **Current color** | The swatch and text show what the lights are doing right now, e.g. *Red*, *Teams: Available*, *On a call (Zoom)*, *Party mode*, *Light not found*. Underneath: which lights are connected. |
-| **Red (Alt+R) / Busy Mode** | Sets the light red until you choose something else. |
-| **Green (Alt+G) / Open Mode** | Sets the light green until you choose something else. |
+| **Red (Alt+R) / Busy Mode** | Sets the light red for 1 hour, then back to Follow Teams Status (see [Override timer](#override-timer)). |
+| **Green (Alt+G) / Open Mode** | Sets the light green for 1 hour, then back to Follow Teams Status. |
+| **On A Call / Flashing red/blue** | Flashes red and blue quickly for 1 hour, then back to Follow Teams Status. Handy for a call the app can't detect, such as a desk phone. |
 | **Cycling Colors / PARTY MODE** | Smoothly cycles through every color, about once every 2.4 seconds. |
 | **Off** | Turns the light off. |
 | **Follow Teams Status** | The light shows your Microsoft Teams status. See [Teams Status](Teams-Status.md). |
+| **Override counter** (under the buttons) | Shows how long until Red, Green or On A Call goes back to Teams status, e.g. *Back to Teams status in 42:10*. Click **Back to Teams now** to go back early. |
 | **⚙ Settings** (top right) | Opens [Settings](#settings). |
 | **Version line** | Shows the version and build date, plus **Check for updates**, **Project page** and **Help** (this guide) links. |
 
 The color you pick is remembered, even after a restart, and is put back if you unplug and replug the light.
 
-**During a call** the light turns red automatically and goes back to your choice afterwards. See [Call Detection](Call-Detection.md). If you pick a color *during* a call, your choice wins until that call ends.
+### Override timer
+
+Red, Green and On A Call *override* your Teams status, so it's easy to forget one is still on. After **1 hour** the lights go back to **Follow Teams Status** on their own, and a notification says so. The countdown shows in the window and when you hover over the tray icon, and it keeps counting through restarts. Picking any color again starts a fresh hour. To keep overrides on until you change them, untick **Back to Follow Teams Status 1 hour after Red, Green or On A Call** in [Settings](#settings).
+
+**During a call** the light flashes red and blue automatically (or shows steady red, if you turn flashing off in Settings) and goes back to your choice afterwards. See [Call Detection](Call-Detection.md). If you pick a color *during* a call, your choice wins until that call ends.
 
 ## The tray menu (right-click the tray icon)
 
 | Item | What it does |
 | --- | --- |
 | **Open Krabbz9999-BusyLightz2.0** | Opens the window. |
-| **Red (Busy Mode) [Override Color]** / **Green (Open Mode) [Override Color]** | Same as the window buttons. "Override" because they take over from Teams status until you choose Follow Teams Status again. |
+| **Red (Busy Mode) [Override Color]** / **Green (Open Mode) [Override Color]** | Same as the window buttons. "Override" because they take over from Teams status for 1 hour (see [Override timer](#override-timer)). |
+| **On A Call (flashing red/blue)** | Same as the window's On A Call button. |
 | **Cycling Colors (PARTY MODE)** | Party Mode. |
 | **Off** | Light off. |
 | **Follow Teams Status** | Light follows Teams. |
@@ -50,7 +57,7 @@ The color you pick is remembered, even after a restart, and is put back if you u
 | **Check for updates** | Looks for a newer version now. |
 | **Project page on GitHub** | Opens this project's page. |
 | **Help (user guide)** | Opens this guide. |
-| **Exit tray app** | Closes the app. The light stays on its last color (Party Mode turns off). The app starts again at your next sign-in. |
+| **Exit tray app** | Closes the app. The light stays on its last color (Party Mode and flashing turn off). The app starts again at your next sign-in. |
 
 The tick in the menu shows the color *you* chose, even while a call is temporarily showing red.
 
@@ -83,10 +90,12 @@ Open with the **⚙ Settings** button in the window or **Settings...** in the tr
 | --- | --- |
 | **Start with Windows** | Starts the app when you sign in. |
 | **Open the window at sign-in** | When off, the app starts quietly in the tray. |
+| **Back to Follow Teams Status 1 hour after Red, Green or On A Call** | The [override timer](#override-timer). On by default. |
 | **Show a notification when the lights change** | The pop-ups described above. |
 | **Hotkeys: Alt+R / Alt+G** | Turn off if they clash with another program. |
 | **Install updates automatically** | When off, the app only updates when you click **Check now** / **Check for updates**. |
 | **Turn lights red when my mic is in use** | [Call Detection](Call-Detection.md) on or off. **Ignore apps...** picks apps that shouldn't count. |
+| **Flash red and blue instead of steady red** | On by default: lights flash red and blue quickly during calls. Untick for steady red. |
 | **Show me as Busy in Teams during calls in other apps** | See [Teams Status](Teams-Status.md#busy-in-teams-during-other-calls). |
 | **Microsoft Teams** | Shows who you're connected as, with **Connect** / **Disconnect**, and **Organization's Teams app...** for [organization setup](Setting-Up-Teams-for-Your-Organization.md). |
 | **Setup checklist...** | Opens the [Setup Checklist](Setup-Checklist.md). |
@@ -100,6 +109,7 @@ Open with the **⚙ Settings** button in the window or **Settings...** in the tr
 | 🟣 Purple | Teams: Do not disturb |
 | 🟡 Yellow | Teams: Away / Be right back |
 | ⚫ Off | Off, or Teams: Offline |
+| 🔴🔵 Flashing red/blue | On a call (detected, or the On A Call button) |
 | 🌈 Cycling | Party Mode |
 
 ---

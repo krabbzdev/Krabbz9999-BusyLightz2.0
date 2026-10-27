@@ -33,6 +33,8 @@ namespace Krabbz.Blynclight
                 v => AppSettings.OpenWindowAtSignIn = v, 24);
             startWithWindows.CheckedChanged += delegate { openWindow.Enabled = startWithWindows.Checked; };
             openWindow.Enabled = startWithWindows.Checked;
+            Box("Back to Follow Teams Status " + TrayContext.OverrideMinutes / 60 + " hour after Red, Green or On A Call",
+                AppSettings.OverrideTimesOut, v => { AppSettings.OverrideTimesOut = v; tray.ApplySettings(); });
             Box("Show a notification when the lights change", AppSettings.ShowNotifications, v => AppSettings.ShowNotifications = v);
             Box("Hotkeys: Alt+R for Red, Alt+G for Green", AppSettings.HotkeysEnabled, v => { AppSettings.HotkeysEnabled = v; tray.ApplySettings(); });
             var updates = Box("Install updates automatically", AppSettings.AutoUpdate, v => AppSettings.AutoUpdate = v);
@@ -46,6 +48,10 @@ namespace Krabbz.Blynclight
                 using (var dialog = new IgnoreAppsDialog()) dialog.ShowDialog(this);
                 tray.ApplySettings();
             });
+            var flash = Box("Flash red and blue instead of steady red", AppSettings.FlashOnCalls,
+                v => { AppSettings.FlashOnCalls = v; tray.ApplySettings(); }, 24);
+            red.CheckedChanged += delegate { flash.Enabled = red.Checked; };
+            flash.Enabled = red.Checked;
             Box("Show me as Busy in Teams during calls in other apps", AppSettings.TeamsBusyOnCalls,
                 v => { AppSettings.TeamsBusyOnCalls = v; tray.ApplySettings(); });
 
