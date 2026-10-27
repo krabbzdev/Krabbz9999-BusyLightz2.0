@@ -1,8 +1,8 @@
-﻿# Krabbz9999 Blynclight App Control
+# Krabbz9999 Blynclight App Control
 
 A small Windows tray app for controlling an [Embrava Blynclight](https://embrava.com) USB status light directly over USB. No Embrava account, API key or admin rights needed.
 
-## â¬‡ï¸ [Download the installer (latest version)](https://github.com/showtechclove1/Krabbz9999-Blynclight/releases/latest/download/Krabbz9999-Blynclight-App-Control.msi)
+## ⬇️ [Download the installer (latest version)](https://github.com/showtechclove1/Krabbz9999-Blynclight/releases/latest/download/Krabbz9999-Blynclight-App-Control.msi)
 
 Release notes and older versions: [Releases](https://github.com/showtechclove1/Krabbz9999-Blynclight/releases)
 
@@ -17,11 +17,11 @@ Release notes and older versions: [Releases](https://github.com/showtechclove1/K
 - Remembers the last color and re-applies it when the light is plugged back in
 - Opens at sign-in (window plus tray icon)
 
-Windows doesn't let installers pin apps to the Start menu. Pin it yourself (right-click the Start menu entry â†’ **Pin to Start**), or push a Start pins policy through Intune/Group Policy on managed machines.
+Windows doesn't let installers pin apps to the Start menu. Pin it yourself (right-click the Start menu entry → **Pin to Start**), or push a Start pins policy through Intune/Group Policy on managed machines.
 
 ## Install
 
-Run the downloaded `Krabbz9999-Blynclight-App-Control.msi`. It installs per user to `%LOCALAPPDATA%\Programs\Krabbz9999 Blynclight App Control` with no admin prompt. Uninstall from **Settings â†’ Apps**.
+Run the downloaded `Krabbz9999-Blynclight-App-Control.msi`. It installs per user to `%LOCALAPPDATA%\Programs\Krabbz9999 Blynclight App Control` with no admin prompt. Uninstall from **Settings → Apps**.
 
 ## Updates
 
