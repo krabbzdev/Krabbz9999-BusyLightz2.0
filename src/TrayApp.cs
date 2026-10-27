@@ -105,6 +105,8 @@ namespace Krabbz.Blynclight
         // Last Teams availability read while signed in (e.g. "Available"), or null.
         string teamsAvailability;
         bool embravaWarned;
+        // What the last notification described, so only real changes notify.
+        string lastNotifiedKey;
         readonly System.Threading.Timer updateTimer;
         int updateCheckRunning;
         readonly NotifyIcon tray;
@@ -143,6 +145,13 @@ namespace Krabbz.Blynclight
             });
             menu.Items.Add(presenceItem);
             menu.Items.Add(new ToolStripSeparator());
+            var notifyItem = new ToolStripMenuItem("Show notifications") { Checked = ShowNotifications };
+            notifyItem.Click += delegate
+            {
+                ShowNotifications = !ShowNotifications;
+                notifyItem.Checked = ShowNotifications;
+            };
+            menu.Items.Add(notifyItem);
             menu.Items.Add("Setup checklist...", null, delegate { ShowSetup(); });
             menu.Items.Add("Version " + Program.VersionText).Enabled = false;
             if (Program.UpdateRepo != null)
@@ -547,7 +556,49 @@ namespace Krabbz.Blynclight
                     : presence.SignedIn ? "Connected as " + presence.Account + ". Click to disconnect."
                     : "Sign in to Microsoft so the light follows your Teams status and Teams shows Busy during other calls.";
             }
+            NotifyIfChanged();
             if (DisplayChanged != null) DisplayChanged();
+        }
+
+        // Shows a notification when what the light shows changes (not for each Party Mode color, and not at startup).
+        void NotifyIfChanged()
+        {
+            string key = light.LightCount == 0 ? "no light" : State + "|" + StatusText;
+            if (key == lastNotifiedKey) return;
+            bool first = lastNotifiedKey == null;
+            lastNotifiedKey = key;
+            if (first || !ShowNotifications) return;
+
+            string message;
+            if (light.LightCount == 0) message = "Light not found. Plug the Blynclight back in.";
+            else if (State == LightState.Party) message = "Light set to Party Mode.";
+            else if (State == LightState.FollowTeams) message = "Light handed to Embrava Connect to show your Teams status.";
+            else if (State == LightState.Off) message = "Light turned off.";
+            else
+            {
+                string color = State; // "red", "green", "purple", "yellow"
+                message = string.Equals(StatusText, color, StringComparison.OrdinalIgnoreCase)
+                    ? "Light set to " + color + "."
+                    : "Light set to " + color + ": " + StatusText + ".";
+            }
+            tray.ShowBalloonTip(3000, Program.AppName, message, ToolTipIcon.None);
+        }
+
+        const string SettingsKey = @"Software\Krabbz9999\Blynclight App Control";
+
+        // On by default; turned off from the tray menu.
+        static bool ShowNotifications
+        {
+            get
+            {
+                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(SettingsKey))
+                    return !(key != null && key.GetValue("ShowNotifications") is int && (int)key.GetValue("ShowNotifications") == 0);
+            }
+            set
+            {
+                using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(SettingsKey))
+                    key.SetValue("ShowNotifications", value ? 1 : 0, Microsoft.Win32.RegistryValueKind.DWord);
+            }
         }
 
         Icon IconFor(Color color)
