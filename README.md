@@ -19,7 +19,8 @@ Release notes and older versions: [Releases](https://github.com/showtechclove1/K
 - **Follow Teams Status:** green Available, red Busy / In a call, purple Do not disturb, yellow Away, off when Offline
 - **Connect to Microsoft Teams:** one-time browser sign-in (delegated `Presence.ReadWrite`, no client secret, token encrypted to your Windows account). Reads your Teams status and shows you as *Busy, In a call* in Teams during calls in other apps.
 - **Setup checklist** on first run, including setting up the Teams app for other organizations
-- **Notifications** when the lights change (can be turned off)
+- **Notifications** when the lights change
+- **Settings window** (⚙ in the app or tray menu): startup, notifications, hotkeys, automatic updates, call detection, Teams Busy and the Teams connection
 - **Automatic, silent updates** from this repo's Releases, verified against GitHub's SHA-256 digest
 - Opens at sign-in, with a tray icon that matches the lights
 

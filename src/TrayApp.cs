@@ -117,6 +117,7 @@ namespace Krabbz.Blynclight
         readonly Dictionary<string, ToolStripMenuItem> stateItems = new Dictionary<string, ToolStripMenuItem>();
         ControlForm form;
         SetupForm setupForm;
+        SettingsForm settingsForm;
         // Where the tray icon and swatch are on the color wheel in Party Mode.
         int partyHue;
 
@@ -145,13 +146,7 @@ namespace Krabbz.Blynclight
             });
             menu.Items.Add(presenceItem);
             menu.Items.Add(new ToolStripSeparator());
-            var notifyItem = new ToolStripMenuItem("Show notifications") { Checked = ShowNotifications };
-            notifyItem.Click += delegate
-            {
-                ShowNotifications = !ShowNotifications;
-                notifyItem.Checked = ShowNotifications;
-            };
-            menu.Items.Add(notifyItem);
+            menu.Items.Add("Settings...", null, delegate { ShowSettings(); });
             menu.Items.Add("Setup checklist...", null, delegate { ShowSetup(); });
             menu.Items.Add("Version " + Program.VersionText).Enabled = false;
             if (Program.UpdateRepo != null)
@@ -170,7 +165,10 @@ namespace Krabbz.Blynclight
             flashTimer.Interval = LightController.PartyStepMs * 2;
             flashTimer.Tick += delegate { partyHue = (partyHue + LightController.PartyHueStep * 2) % 360; UpdateDisplay(); };
 
-            RegisterHotkeys();
+            if (AppSettings.HotkeysEnabled) RegisterHotkeys();
+            messages.HotkeyPressed += id => SetState(HotkeyStates[id]);
+            // Installs and updates rewrite the sign-in startup entry; put back the user's choice.
+            try { AppSettings.ApplyStartup(); } catch (Exception) { }
             Refresh();
 
             light.LightsChanged += delegate
@@ -179,26 +177,10 @@ namespace Krabbz.Blynclight
                 catch (InvalidOperationException) { } // Window already gone during exit.
             };
             // Red while any (non-ignored) app has the microphone open, then back to the user's color
-            // (or back to Teams status when following Teams).
+            // (or back to Teams status when following Teams). Both parts can be turned off in Settings.
             calls = new CallDetector(app =>
             {
-                try
-                {
-                    messages.BeginInvoke((Action)delegate
-                    {
-                        bool wasOverriding = light.OverrideActive;
-                        // Teams already shows its own calls as Busy; other apps need presence set.
-                        if (presence != null)
-                        {
-                            if (app != null && !app.IsTeams) presence.CallStarted();
-                            else if (callApp != null && !callApp.IsTeams) presence.CallEnded();
-                        }
-                        callApp = app;
-                        light.SetOverride(app != null ? LightState.Red : null);
-                        if (app == null && wasOverriding && light.State == LightState.FollowTeams) HandBackToTeams();
-                        Refresh();
-                    });
-                }
+                try { messages.BeginInvoke((Action)delegate { OnMicApp(app); }); }
                 catch (InvalidOperationException) { } // Window already gone during exit.
             });
             teamsPoll = new System.Threading.Timer(delegate { PollTeams(); }, null, 0, TeamsPollMs);
@@ -233,6 +215,11 @@ namespace Krabbz.Blynclight
         public void ConnectTeams()
         {
             if (presence != null && !presence.SignedIn) TogglePresence();
+        }
+
+        public void DisconnectTeams()
+        {
+            if (presence != null && presence.SignedIn) TogglePresence();
         }
 
         TeamsPresence CreatePresence()
@@ -284,6 +271,38 @@ namespace Krabbz.Blynclight
             timer.Start();
         }
 
+        void OnMicApp(MicApp app)
+        {
+            bool wasOverriding = light.OverrideActive;
+            // Teams already shows its own calls as Busy; other apps need presence set.
+            if (presence != null)
+            {
+                if (app != null && !app.IsTeams && AppSettings.TeamsBusyOnCalls) presence.CallStarted();
+                else presence.CallEnded();
+            }
+            var shown = AppSettings.CallsTurnRed ? app : null;
+            callApp = shown;
+            light.SetOverride(shown != null ? LightState.Red : null);
+            if (shown == null && wasOverriding && light.State == LightState.FollowTeams) HandBackToTeams();
+            Refresh();
+        }
+
+        // Re-applies call and hotkey settings after they change in the Settings window.
+        public void ApplySettings()
+        {
+            calls.Recheck();
+            for (int id = 0; id < HotkeyStates.Length; id++) UnregisterHotKey(messages.Handle, id);
+            if (AppSettings.HotkeysEnabled) RegisterHotkeys();
+        }
+
+        public void ShowSettings()
+        {
+            if (settingsForm == null || settingsForm.IsDisposed) settingsForm = new SettingsForm(this);
+            settingsForm.Show();
+            if (settingsForm.WindowState == FormWindowState.Minimized) settingsForm.WindowState = FormWindowState.Normal;
+            settingsForm.Activate();
+        }
+
         void AddStateItem(ContextMenuStrip menu, string text, string state)
         {
             var item = new ToolStripMenuItem(text, null, delegate { SetState(state); });
@@ -301,7 +320,6 @@ namespace Krabbz.Blynclight
                 if (!RegisterHotKey(messages.Handle, id, MOD_ALT | MOD_NOREPEAT, (uint)HotkeyKeys[id]))
                     failed.Add(HotkeyText[HotkeyStates[id]]);
             }
-            messages.HotkeyPressed += id => SetState(HotkeyStates[id]);
             if (failed.Count > 0)
                 tray.ShowBalloonTip(5000, Program.AppName,
                     string.Join(", ", failed.ToArray()) + " is already used by another program, so that hotkey won't work.", ToolTipIcon.Warning);
@@ -323,6 +341,7 @@ namespace Krabbz.Blynclight
 
         public void CheckForUpdates(bool manual)
         {
+            if (!manual && !AppSettings.AutoUpdate) return;
             if (Interlocked.Exchange(ref updateCheckRunning, 1) == 1) return;
             ThreadPool.QueueUserWorkItem(delegate
             {
@@ -398,7 +417,7 @@ namespace Krabbz.Blynclight
                 {
                     signingIn.SignIn();
                     message = "Connected to Teams as " + signingIn.Account + ". Follow Teams Status now uses your Teams status directly, and Teams shows you as Busy during other calls.";
-                    if (callApp != null && !callApp.IsTeams) signingIn.CallStarted();
+                    if (callApp != null && !callApp.IsTeams && AppSettings.TeamsBusyOnCalls) signingIn.CallStarted();
                     PollTeams();
                 }
                 catch (Exception ex)
@@ -567,7 +586,7 @@ namespace Krabbz.Blynclight
             if (key == lastNotifiedKey) return;
             bool first = lastNotifiedKey == null;
             lastNotifiedKey = key;
-            if (first || !ShowNotifications) return;
+            if (first || !AppSettings.ShowNotifications) return;
 
             string message;
             if (light.LightCount == 0) message = "No light found. Plug your Blynclight or Luxafor back in.";
@@ -582,23 +601,6 @@ namespace Krabbz.Blynclight
                     : "Light set to " + color + ": " + StatusText + ".";
             }
             tray.ShowBalloonTip(3000, Program.AppName, message, ToolTipIcon.None);
-        }
-
-        const string SettingsKey = @"Software\Krabbz9999\Blynclight App Control";
-
-        // On by default; turned off from the tray menu.
-        static bool ShowNotifications
-        {
-            get
-            {
-                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(SettingsKey))
-                    return !(key != null && key.GetValue("ShowNotifications") is int && (int)key.GetValue("ShowNotifications") == 0);
-            }
-            set
-            {
-                using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(SettingsKey))
-                    key.SetValue("ShowNotifications", value ? 1 : 0, Microsoft.Win32.RegistryValueKind.DWord);
-            }
         }
 
         Icon IconFor(Color color)
@@ -673,6 +675,10 @@ namespace Krabbz.Blynclight
             lightsLabel.AutoSize = true;
             lightsLabel.Location = new Point(96, 72);
             Controls.Add(lightsLabel);
+
+            var settings = new Button { Text = "⚙ Settings", Font = new Font("Segoe UI", 9), Bounds = new Rectangle(290, 16, 90, 30) };
+            settings.Click += delegate { tray.ShowSettings(); };
+            Controls.Add(settings);
 
             AddButton("Red", "(Busy Mode)", LightState.Red, 20, 100, 175, 54);
             AddButton("Green", "(Open Mode)", LightState.Green, 205, 100, 175, 54);

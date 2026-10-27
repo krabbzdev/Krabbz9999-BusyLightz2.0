@@ -51,6 +51,12 @@ namespace Krabbz.Blynclight
             timer = new Timer(delegate { Poll(); }, null, 0, PollMs);
         }
 
+        // Reports the current mic app again on the next poll, e.g. after settings change.
+        public void Recheck()
+        {
+            currentId = "\u0001";
+        }
+
         void Poll()
         {
             MicApp app = null;
