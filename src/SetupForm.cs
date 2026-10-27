@@ -163,7 +163,7 @@ namespace Krabbz.Blynclight
             "Then send me the Application (client) ID and Directory (tenant) ID from the app's Overview page.\r\n" +
             "To deploy to everyone, add TEAMSCLIENTID=<client ID> TEAMSTENANTID=<tenant ID> to the installer's command line.\r\n\r\n" +
             "Script alternative (creates or reuses the registration): scripts/New-EntraAppRegistration.ps1 in " +
-            "https://github.com/showtechclove1/Krabbz9999-Blynclight";
+            "https://github.com/showtechclove1/Krabbz9999-BusyLightz2.0";
 
         readonly TrayContext tray;
         readonly TextBox clientBox = new TextBox();

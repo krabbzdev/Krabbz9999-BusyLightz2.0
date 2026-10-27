@@ -11,7 +11,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$Version,
     # GitHub owner/repo the app checks for newer releases; empty disables auto-update.
-    [string]$UpdateRepo = 'showtechclove1/Krabbz9999-Blynclight',
+    [string]$UpdateRepo = 'showtechclove1/Krabbz9999-BusyLightz2.0',
     # Entra app registration (Application and Directory IDs) for "Connect to Microsoft Teams", created by
     # scripts\New-EntraAppRegistration.ps1. Not secrets. Pass empty strings to build without the feature.
     [string]$GraphClientId = '0213fb00-29af-4f12-a2f9-8b90447266d3',

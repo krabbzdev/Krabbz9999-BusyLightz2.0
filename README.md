@@ -4,11 +4,11 @@
 
 A small Windows tray app that controls USB busy lights directly over USB. Plug in any mix of Blynclights and Luxafor Flags, as many of each as you like, and they all show the same color at the same time. It replaces both Embrava Connect and Luxafor's own app. No vendor accounts or admin rights needed.
 
-📖 **[Full guide in the wiki](https://github.com/showtechclove1/Krabbz9999-Blynclight/wiki)**: every feature and how to use it.
+📖 **[Full guide in the wiki](https://github.com/showtechclove1/Krabbz9999-BusyLightz2.0/wiki)**: every feature and how to use it.
 
-## ⬇️ [Download the installer (latest version)](https://github.com/showtechclove1/Krabbz9999-Blynclight/releases/latest/download/Krabbz9999-Blynclight-App-Control.msi)
+## ⬇️ [Download the installer (latest version)](https://github.com/showtechclove1/Krabbz9999-BusyLightz2.0/releases/latest/download/Krabbz9999-Blynclight-App-Control.msi)
 
-Release notes and older versions: [Releases](https://github.com/showtechclove1/Krabbz9999-Blynclight/releases)
+Release notes and older versions: [Releases](https://github.com/showtechclove1/Krabbz9999-BusyLightz2.0/releases)
 
 ## Features
 
