@@ -523,15 +523,17 @@ namespace Krabbz.Blynclight
             AddButton("Off", null, LightState.Off, 20, 228, 175, 40);
             AddButton("Follow Teams Status", null, LightState.FollowTeams, 205, 228, 175, 40);
 
-            var overrideNote = new Label
+            var betaNote = new Label
             {
-                Text = "Your Teams and Calendar status will override this.",
+                Text = "This app replaces the Embrava Connect App. When you are on a call, your light should turn red " +
+                       "to let others know you are on a call. This is still BETA",
                 ForeColor = Color.FromArgb(160, 90, 0),
                 Font = new Font("Segoe UI", 9, FontStyle.Bold),
                 AutoSize = true,
+                MaximumSize = new Size(360, 0), // Wrap within the window.
                 Location = new Point(20, 280),
             };
-            Controls.Add(overrideNote);
+            Controls.Add(betaNote);
 
             var hint = new Label
             {
@@ -539,7 +541,7 @@ namespace Krabbz.Blynclight
                 ForeColor = Color.Gray,
                 Font = new Font("Segoe UI", 8.5f),
                 AutoSize = true,
-                Location = new Point(20, 304),
+                Location = new Point(20, betaNote.Bottom + 8),
             };
             Controls.Add(hint);
 
@@ -549,9 +551,10 @@ namespace Krabbz.Blynclight
                 ForeColor = Color.Gray,
                 Font = new Font("Segoe UI", 8.5f),
                 AutoSize = true,
-                Location = new Point(20, 324),
+                Location = new Point(20, hint.Bottom + 4),
             };
             Controls.Add(version);
+            ClientSize = new Size(ClientSize.Width, version.Bottom + 12);
 
             tray.DisplayChanged += RefreshDisplay;
             RefreshDisplay();
