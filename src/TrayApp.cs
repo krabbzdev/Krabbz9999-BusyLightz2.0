@@ -570,7 +570,7 @@ namespace Krabbz.Blynclight
             if (first || !ShowNotifications) return;
 
             string message;
-            if (light.LightCount == 0) message = "Light not found. Plug the Blynclight back in.";
+            if (light.LightCount == 0) message = "No light found. Plug your Blynclight or Luxafor back in.";
             else if (State == LightState.Party) message = "Light set to Party Mode.";
             else if (State == LightState.FollowTeams) message = "Light handed to Embrava Connect to show your Teams status.";
             else if (State == LightState.Off) message = "Light turned off.";
@@ -642,6 +642,8 @@ namespace Krabbz.Blynclight
         readonly TrayContext tray;
         readonly Panel swatch = new Panel();
         readonly Label statusLabel = new Label();
+        // Which lights are connected, e.g. "Lights: Blynclight + Luxafor".
+        readonly Label lightsLabel = new Label();
 
         public ControlForm(TrayContext tray)
         {
@@ -665,6 +667,12 @@ namespace Krabbz.Blynclight
             statusLabel.AutoSize = true;
             statusLabel.Location = new Point(95, 46);
             Controls.Add(statusLabel);
+
+            lightsLabel.ForeColor = Color.Gray;
+            lightsLabel.Font = new Font("Segoe UI", 8.5f);
+            lightsLabel.AutoSize = true;
+            lightsLabel.Location = new Point(96, 72);
+            Controls.Add(lightsLabel);
 
             AddButton("Red", "(Busy Mode)", LightState.Red, 20, 100, 175, 54);
             AddButton("Green", "(Open Mode)", LightState.Green, 205, 100, 175, 54);
@@ -740,6 +748,7 @@ namespace Krabbz.Blynclight
         {
             swatch.BackColor = tray.DisplayColor;
             statusLabel.Text = tray.StatusText;
+            lightsLabel.Text = "Lights: " + tray.Light.LightSummary;
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)

@@ -43,7 +43,7 @@ namespace Krabbz.Blynclight
             });
 
             int y = 54;
-            lightStep = AddStep(ref y, "Blynclight plugged in", "Check again", delegate { Recheck(); });
+            lightStep = AddStep(ref y, "Light plugged in", "Check again", delegate { Recheck(); });
             orgStep = AddStep(ref y, "Your organization's Teams app", "Set up...", delegate
             {
                 using (var dialog = new TeamsAppDialog(tray)) dialog.ShowDialog(this);
@@ -103,7 +103,8 @@ namespace Krabbz.Blynclight
             var light = tray.Light;
             bool lightFound = light.LightCount > 0;
             Show(lightStep, lightFound ? Mark.Done : Mark.Todo,
-                lightFound ? "Found." : "No Blynclight found. Plug it in, then click Check again.", !lightFound);
+                lightFound ? "Found: " + light.LightSummary + "."
+                           : "No Blynclight or Luxafor Flag found. Plug one in (with a data cable, not charge-only), then click Check again.", !lightFound);
 
             if (TeamsAppConfig.UsingOwnApp)
                 Show(orgStep, Mark.Done, "Using your organization's own app registration.", true);

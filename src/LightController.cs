@@ -25,7 +25,7 @@ namespace Krabbz.Blynclight
         // Color for the user's Teams status, shown in FollowTeams when the app reads presence itself.
         // Null means Embrava Connect is driving the light instead.
         string teamsColor;
-        List<string> knownPaths = new List<string>();
+        List<LightDevice> knownLights = new List<LightDevice>();
         string lastLogged;
 
         // Raised on a background thread when a light is plugged in or removed.
@@ -57,7 +57,25 @@ namespace Krabbz.Blynclight
             }
         }
         public bool OverrideActive { get { lock (sync) return callOverride != null; } }
-        public int LightCount { get { lock (sync) return knownPaths.Count; } }
+        public int LightCount { get { lock (sync) return knownLights.Count; } }
+
+        // e.g. "Blynclight + 2 Luxafor", or "none".
+        public string LightSummary
+        {
+            get
+            {
+                int blync, lux;
+                lock (sync)
+                {
+                    blync = knownLights.FindAll(l => l.Kind == LightKind.Blynclight).Count;
+                    lux = knownLights.Count - blync;
+                }
+                var parts = new List<string>();
+                if (blync > 0) parts.Add((blync > 1 ? blync + " " : "") + "Blynclight");
+                if (lux > 0) parts.Add((lux > 1 ? lux + " " : "") + "Luxafor");
+                return parts.Count == 0 ? "none" : string.Join(" + ", parts.ToArray());
+            }
+        }
 
         // Picking a state by hand also cancels any call override, so a manual choice always wins.
         public void Set(string newState)
@@ -100,7 +118,7 @@ namespace Krabbz.Blynclight
         {
             stopEvent.Set();
             lightThread.Join(2000);
-            if (ShownState == LightState.Party) WriteAll(BlyncDevice.ReportFor(LightState.Off));
+            if (ShownState == LightState.Party) WriteAll(LightColor.Off);
         }
 
         void LightLoop()
@@ -114,13 +132,14 @@ namespace Krabbz.Blynclight
                 if (sinceDeviceCheck >= DeviceCheckMs)
                 {
                     sinceDeviceCheck = 0;
-                    var paths = BlyncDevice.FindPaths();
+                    var found = BlyncDevice.FindLights();
                     bool newLight = false, countChanged;
                     lock (sync)
                     {
-                        foreach (var path in paths) if (!knownPaths.Contains(path)) newLight = true;
-                        countChanged = paths.Count != knownPaths.Count;
-                        knownPaths = paths;
+                        foreach (var light in found)
+                            if (!knownLights.Exists(known => known.Path == light.Path)) newLight = true;
+                        countChanged = found.Count != knownLights.Count;
+                        knownLights = found;
                     }
                     if (newLight) Apply(current);
                     if ((newLight || countChanged) && LightsChanged != null) LightsChanged();
@@ -130,7 +149,7 @@ namespace Krabbz.Blynclight
                 {
                     byte r, g, b;
                     BlyncDevice.HueToRgb(hue, out r, out g, out b);
-                    WriteAll(BlyncDevice.ReportForRgb(r, g, b));
+                    WriteAll(LightColor.Rgb(r, g, b));
                     hue = (hue + PartyHueStep) % 360;
                 }
                 sinceDeviceCheck += PartyStepMs;
@@ -142,17 +161,18 @@ namespace Krabbz.Blynclight
             // Party Mode is driven by LightLoop; solid states are written once. In FollowTeams without a
             // Teams color the light belongs to Embrava Connect, so nothing is written.
             if (newState != LightState.Party && newState != LightState.FollowTeams)
-                WriteAll(BlyncDevice.ReportFor(newState));
+                WriteAll(BlyncDevice.ColorFor(newState));
         }
 
-        void WriteAll(byte[] report)
+        // Sends the color to every connected light, each in its own report format.
+        void WriteAll(LightColor color)
         {
-            List<string> paths;
-            lock (sync) paths = knownPaths;
-            foreach (var path in paths)
+            List<LightDevice> lights;
+            lock (sync) lights = knownLights;
+            foreach (var light in lights)
             {
-                try { BlyncDevice.Write(path, report); }
-                catch (Exception ex) { Log("Could not update light: " + ex.Message); }
+                try { BlyncDevice.Write(light.Path, BlyncDevice.ReportFor(light.Kind, color)); }
+                catch (Exception ex) { Log("Could not update " + light.Kind + ": " + ex.Message); }
             }
         }
 
