@@ -12,12 +12,32 @@ namespace Krabbz.Blynclight
         const string ProcessName = "EmbravaConnect";
         const string DefaultPath = @"C:\Program Files (x86)\Embrava\Embrava Connect\EmbravaConnect.exe";
 
+        public static bool IsInstalled { get { return FindExe() != null; } }
+
+        public static bool IsRunning
+        {
+            get
+            {
+                int session = Process.GetCurrentProcess().SessionId;
+                foreach (var running in Process.GetProcessesByName(ProcessName))
+                    using (running) if (running.SessionId == session) return true;
+                return false;
+            }
+        }
+
         // Returns false if Embrava Connect isn't installed.
         public static bool Restart()
         {
             string exe = FindExe();
             if (exe == null) return false;
+            Quit();
+            Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = Path.GetDirectoryName(exe) });
+            return true;
+        }
 
+        // Closes Embrava Connect for this Windows session. It starts again at the next sign-in unless it's uninstalled.
+        public static void Quit()
+        {
             int session = Process.GetCurrentProcess().SessionId;
             foreach (var running in Process.GetProcessesByName(ProcessName))
             {
@@ -32,8 +52,6 @@ namespace Krabbz.Blynclight
                     catch (Exception) { } // Already exiting.
                 }
             }
-            Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = Path.GetDirectoryName(exe) });
-            return true;
         }
 
         // Prefers the path from Embrava Connect's own startup entry, in case it's installed elsewhere.

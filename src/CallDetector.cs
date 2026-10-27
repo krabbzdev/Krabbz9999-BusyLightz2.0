@@ -45,6 +45,31 @@ namespace Krabbz.Blynclight
             callChanged(app);
         }
 
+        // True once Windows has recorded the app ("Cytracom" or "Teams") using the microphone, which is what
+        // call detection reads. An app that has never used the mic won't be detected until its first call.
+        public static bool HasMicRecord(string appName)
+        {
+            using (var mic = Registry.CurrentUser.OpenSubKey(MicUsageKey))
+            {
+                if (mic == null) return false;
+                using (var desktop = mic.OpenSubKey("NonPackaged"))
+                {
+                    if (desktop != null)
+                    {
+                        foreach (string name in desktop.GetSubKeyNames())
+                            foreach (var app in DesktopApps)
+                                if (app[1] == appName && name.EndsWith(app[0], StringComparison.OrdinalIgnoreCase)) return true;
+                    }
+                }
+                foreach (var app in PackagedApps)
+                {
+                    if (app[1] != appName) continue;
+                    using (var key = mic.OpenSubKey(app[0])) if (key != null) return true;
+                }
+            }
+            return false;
+        }
+
         static string AppUsingMic()
         {
             using (var mic = Registry.CurrentUser.OpenSubKey(MicUsageKey))

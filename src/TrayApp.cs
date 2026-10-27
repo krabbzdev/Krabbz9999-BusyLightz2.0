@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -113,6 +114,7 @@ namespace Krabbz.Blynclight
         readonly Dictionary<Color, Icon> icons = new Dictionary<Color, Icon>();
         readonly Dictionary<string, ToolStripMenuItem> stateItems = new Dictionary<string, ToolStripMenuItem>();
         ControlForm form;
+        SetupForm setupForm;
         // Where the tray icon and swatch are on the color wheel in Party Mode.
         int partyHue;
 
@@ -126,8 +128,8 @@ namespace Krabbz.Blynclight
             var menu = new ContextMenuStrip();
             menu.Items.Add("Open " + Program.AppName, null, delegate { ShowWindow(); }).Font = new Font(menu.Font, FontStyle.Bold);
             menu.Items.Add(new ToolStripSeparator());
-            AddStateItem(menu, "Red (Busy Mode)", LightState.Red);
-            AddStateItem(menu, "Green (Open Mode)", LightState.Green);
+            AddStateItem(menu, "Red (Busy Mode) [Override Color]", LightState.Red);
+            AddStateItem(menu, "Green (Open Mode) [Override Color]", LightState.Green);
             AddStateItem(menu, "Cycling Colors (PARTY MODE)", LightState.Party);
             AddStateItem(menu, "Off", LightState.Off);
             AddStateItem(menu, "Follow Teams Status", LightState.FollowTeams);
@@ -139,6 +141,7 @@ namespace Krabbz.Blynclight
                 menu.Items.Add(presenceItem);
                 menu.Items.Add(new ToolStripSeparator());
             }
+            menu.Items.Add("Setup checklist...", null, delegate { ShowSetup(); });
             menu.Items.Add("Version " + Program.VersionText).Enabled = false;
             if (Program.UpdateRepo != null) menu.Items.Add("Check for updates", null, delegate { CheckForUpdates(true); });
             menu.Items.Add("Exit tray app", null, delegate { Application.Exit(); });
@@ -190,8 +193,56 @@ namespace Krabbz.Blynclight
             showWait = ThreadPool.RegisterWaitForSingleObject(showSignal,
                 delegate { messages.BeginInvoke((Action)ShowWindow); }, null, -1, false);
             if (showWindow) ShowWindow();
+            // Walk new users (and users updating from before the checklist existed) through setup once.
+            if (!File.Exists(SetupShownPath))
+            {
+                ShowSetup();
+                try { File.WriteAllText(SetupShownPath, Program.VersionText); } catch (IOException) { }
+            }
             if (justUpdated)
                 tray.ShowBalloonTip(5000, Program.AppName, "Updated to version " + Program.VersionText + ".", ToolTipIcon.Info);
+        }
+
+        static string SetupShownPath
+        {
+            get
+            {
+                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Krabbz9999 Blynclight", "setup-shown.txt");
+            }
+        }
+
+        // For the setup checklist.
+        public LightController Light { get { return light; } }
+        public TeamsPresence Presence { get { return presence; } }
+
+        public void ConnectTeams()
+        {
+            if (presence != null && !presence.SignedIn) TogglePresence();
+        }
+
+        public void ShowSetup()
+        {
+            if (setupForm == null || setupForm.IsDisposed) setupForm = new SetupForm(this);
+            setupForm.Show();
+            if (setupForm.WindowState == FormWindowState.Minimized) setupForm.WindowState = FormWindowState.Normal;
+            setupForm.Activate();
+        }
+
+        // Shows red for a few seconds so the user can see the light respond, unless a real call is in progress.
+        public void TestLight()
+        {
+            if (light.OverrideActive) return;
+            light.SetOverride(LightState.Red);
+            Refresh();
+            var timer = new System.Windows.Forms.Timer { Interval = 3000 };
+            timer.Tick += delegate
+            {
+                timer.Dispose();
+                if (callApp == null) light.SetOverride(null);
+                Refresh();
+            };
+            timer.Start();
         }
 
         void AddStateItem(ContextMenuStrip menu, string text, string state)
@@ -421,7 +472,7 @@ namespace Krabbz.Blynclight
             get
             {
                 if (light.LightCount == 0) return "Light not found";
-                if (light.OverrideActive) return "On a " + callApp + " call (Busy)";
+                if (light.OverrideActive) return callApp == null ? "Testing the light" : "On a " + callApp + " call (Busy)";
                 if (light.State == LightState.FollowTeams && teamsAvailability != null) return "Teams: " + DescribeAvailability(teamsAvailability);
                 return LightState.Describe(State);
             }
