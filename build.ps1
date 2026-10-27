@@ -2,11 +2,18 @@
 .SYNOPSIS
   Builds the Blynclight tray app and its per-user MSI (no admin rights needed).
   Output: dist\Krabbz9999-Blynclight-App-Control-<version>.msi
+
+.EXAMPLE
+  .\build.ps1 -Version 2.0.3            # build only
+  .\build.ps1 -Version 2.0.3 -Publish   # build, then publish as GitHub release v2.0.3 (installed apps auto-update to it)
 #>
 param(
-    [string]$Version = '2.0.0',
+    [Parameter(Mandatory = $true)]
+    [string]$Version,
     # GitHub owner/repo the app checks for newer releases; empty disables auto-update.
-    [string]$UpdateRepo = ''
+    [string]$UpdateRepo = 'showtechclove1/Krabbz9999-Blynclight-App-Control',
+    # Publish the MSI as a GitHub release (needs GitHub CLI, signed in).
+    [switch]$Publish
 )
 
 $ErrorActionPreference = 'Stop'
@@ -92,3 +99,12 @@ $msi = Join-Path $dist "Krabbz9999-Blynclight-App-Control-$Version.msi"
 Invoke-Tool "$wix\light.exe" @('-nologo', '-ext', 'WixUtilExtension', '-spdb', '-out', $msi, "$build\Product.wixobj")
 
 Write-Host "Built $msi"
+
+if ($Publish) {
+    $gh = (Get-Command gh -ErrorAction SilentlyContinue).Source
+    if (-not $gh) { $gh = Get-ChildItem "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\GitHub.cli_*\bin\gh.exe" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName }
+    if (-not $gh) { throw 'GitHub CLI (gh) not found. Install it with: winget install GitHub.cli' }
+    Write-Host "Publishing release v$Version to $UpdateRepo..."
+    Invoke-Tool $gh @('release', 'create', "v$Version", $msi, '--repo', $UpdateRepo,
+        '--title', "Version $Version", '--notes', "Krabbz9999 Blynclight App Control $Version")
+}
