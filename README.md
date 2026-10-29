@@ -24,7 +24,7 @@ Release notes and older versions: [Releases](https://github.com/krabbzdev/Krabbz
 - **Test Lights:** cycles smoothly through the full color wheel on every light, to check they all work and match
 - **Flashes red and blue whenever you're on a call:** any app using your microphone (Teams, Zoom, Cytracom, browser calls…) sets the lights flashing (or steady red, your choice in Settings), then back afterward. An ignore list handles recorders and noise-cancelling tools.
 - **Follow Teams Status:** green Available, red Busy / In a call, purple Do not disturb, yellow Away, off when Offline
-- **Connect to Microsoft Teams:** one-time browser sign-in (delegated `Presence.ReadWrite`, no client secret, token encrypted to your Windows account). Reads your Teams status and shows you as *Busy, In a call* in Teams during calls in other apps.
+- **Connect to Microsoft Teams:** one-time browser sign-in (delegated `Presence.ReadWrite`, no client secret, token encrypted to your Windows account). Reads your Teams status, shows you as *Busy, In a call* in Teams during calls in other apps, and can set a Teams status message (e.g. *On a video call*) while your lights are red.
 - **Setup checklist** on first run, including setting up the Teams app for other organizations
 - **Notifications** when the lights change
 - **Settings window** (⚙ in the app or tray menu): startup, notifications, hotkeys, automatic updates, call detection, Teams Busy and the Teams connection

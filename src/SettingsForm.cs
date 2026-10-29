@@ -33,7 +33,8 @@ namespace Krabbz.Blynclight
                 v => AppSettings.OpenWindowAtSignIn = v, 24);
             startWithWindows.CheckedChanged += delegate { openWindow.Enabled = startWithWindows.Checked; };
             openWindow.Enabled = startWithWindows.Checked;
-            var timesOut = Box("Go back to Follow Teams Status after Red, Green or On A Call",
+            // Red, Green and On A Call override Teams status until this runs out.
+            var timesOut = Box("Go back to Follow Teams Status after",
                 AppSettings.OverrideTimesOut, v => { AppSettings.OverrideTimesOut = v; tray.ApplySettings(); });
             var minutes = OverrideMinutesPicker(timesOut);
             timesOut.CheckedChanged += delegate { minutes.Enabled = timesOut.Checked; };
@@ -74,7 +75,13 @@ namespace Krabbz.Blynclight
             var orgApp = new Button { Text = "Organization's Teams app...", Bounds = new Rectangle(24, y, 220, 32) };
             orgApp.Click += delegate { ShowTeamsAppDialog(); };
             Controls.Add(orgApp);
-            y += 52;
+            y += 44;
+            var messageOn = Box("Set my Teams status message while my lights are red:",
+                AppSettings.TeamsStatusMessageOn, v => { AppSettings.TeamsStatusMessageOn = v; tray.ApplySettings(); });
+            var message = StatusMessagePicker(24 + 24);
+            messageOn.CheckedChanged += delegate { message.Enabled = messageOn.Checked; };
+            message.Enabled = messageOn.Checked;
+            y += 16;
 
             var setup = new Button { Text = "Setup checklist...", Bounds = new Rectangle(20, y, 150, 34) };
             setup.Click += delegate { tray.ShowSetup(); };
@@ -154,6 +161,51 @@ namespace Krabbz.Blynclight
             Controls.Add(picker);
             row.MaximumSize = new Size(picker.Left - row.Left - 8, 0);
             return picker;
+        }
+
+        // The status message choices, plus "Custom message" with a box to type one. Returns a panel holding both.
+        Panel StatusMessagePicker(int x)
+        {
+            const string Custom = "Custom message...";
+            var panel = new Panel { Bounds = new Rectangle(x, y, 480 - x, 32) };
+            var picker = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Bounds = new Rectangle(0, 0, 230, 30) };
+            var custom = new TextBox { Bounds = new Rectangle(238, 1, panel.Width - 238, 28), MaxLength = AppSettings.TeamsStatusMessageMaxLength };
+            picker.Items.AddRange(AppSettings.TeamsStatusMessageChoices);
+            picker.Items.Add(Custom);
+
+            string saved = AppSettings.TeamsStatusMessage;
+            int index = Array.IndexOf(AppSettings.TeamsStatusMessageChoices, saved);
+            picker.SelectedIndex = index >= 0 ? index : picker.Items.Count - 1;
+            custom.Text = index >= 0 ? "" : saved;
+            custom.Visible = index < 0;
+
+            picker.SelectedIndexChanged += delegate
+            {
+                bool isCustom = (string)picker.SelectedItem == Custom;
+                custom.Visible = isCustom;
+                if (isCustom) { custom.Focus(); SaveCustom(custom); }
+                else
+                {
+                    AppSettings.TeamsStatusMessage = (string)picker.SelectedItem;
+                    tray.ApplySettings();
+                }
+            };
+            // Saved as you type; Teams is updated once you leave the box.
+            custom.TextChanged += delegate { if (custom.Text.Trim().Length > 0) AppSettings.TeamsStatusMessage = custom.Text.Trim(); };
+            custom.Leave += delegate { SaveCustom(custom); };
+
+            panel.Controls.Add(picker);
+            panel.Controls.Add(custom);
+            Controls.Add(panel);
+            y += 36;
+            return panel;
+        }
+
+        void SaveCustom(TextBox custom)
+        {
+            if (custom.Text.Trim().Length == 0) return; // Keeps the last message until something is typed.
+            AppSettings.TeamsStatusMessage = custom.Text.Trim();
+            tray.ApplySettings();
         }
 
         static string DescribeMinutes(int minutes)

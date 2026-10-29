@@ -25,6 +25,10 @@ namespace Krabbz.Blynclight
         // Renew before the 5-minute expiration while the call continues.
         const int RenewMs = 4 * 60 * 1000;
         const int SignInTimeoutMs = 5 * 60 * 1000;
+        // The status message expires on its own after this, so a crash or sleep never leaves it stuck for long.
+        const int MessageExpiryMinutes = 60;
+        // Renew well before it expires while the lights stay red.
+        const int MessageRenewMs = 30 * 60 * 1000;
 
         static readonly JavaScriptSerializer Json = new JavaScriptSerializer();
 
@@ -46,6 +50,12 @@ namespace Krabbz.Blynclight
         DateTime accessTokenExpires;
         bool onCall;
         bool problemReported;
+        readonly Timer messageTimer;
+        // The status message that should show now (null for none), and the one this app last set.
+        string wantedMessage;
+        string shownMessage;
+        // The user's own status message from before ours, put back afterwards.
+        Dictionary<string, object> previousMessage;
 
         // reportProblem is called on a background thread with a message the user should see.
         public TeamsPresence(string clientId, string tenantId, Action<string> reportProblem)
@@ -55,6 +65,7 @@ namespace Krabbz.Blynclight
             this.reportProblem = reportProblem;
             Load();
             renewTimer = new Timer(delegate { Renew(); }, null, Timeout.Infinite, Timeout.Infinite);
+            messageTimer = new Timer(delegate { UpdateStatusMessage(); }, null, Timeout.Infinite, Timeout.Infinite);
         }
 
         public bool SignedIn { get { lock (sync) return refreshToken != null; } }
@@ -122,13 +133,14 @@ namespace Krabbz.Blynclight
             }
         }
 
-        // Clears any Busy status this app set and forgets the stored token.
+        // Clears any Busy status and status message this app set and forgets the stored token.
         public void SignOut()
         {
             bool wasOnCall;
             lock (sync) { wasOnCall = onCall; onCall = false; }
             renewTimer.Change(Timeout.Infinite, Timeout.Infinite);
             if (wasOnCall) TryClear();
+            TakeDownStatusMessage();
             lock (sync) { refreshToken = null; accessToken = null; userId = null; account = null; }
             try { File.Delete(tokenPath); } catch (IOException) { }
         }
@@ -189,6 +201,125 @@ namespace Krabbz.Blynclight
             }
         }
 
+        // Shows text as the Teams status message, or null to take it away again. Runs in the background.
+        public void ShowStatusMessage(string text)
+        {
+            lock (sync)
+            {
+                if (text == wantedMessage) return;
+                wantedMessage = text;
+            }
+            messageTimer.Change(0, text == null ? Timeout.Infinite : MessageRenewMs);
+        }
+
+        void UpdateStatusMessage()
+        {
+            lock (graphGate)
+            {
+                string wanted, shown;
+                lock (sync)
+                {
+                    if (refreshToken == null) return;
+                    wanted = wantedMessage;
+                    shown = shownMessage;
+                }
+                try
+                {
+                    if (wanted != null)
+                    {
+                        if (shown == null)
+                        {
+                            // Remember the user's own message to put back later, unless it's a leftover of ours.
+                            var current = CurrentStatusMessage();
+                            previousMessage = current != null && ContentOf(current) != wanted ? current : null;
+                        }
+                        PostStatusMessage(new Dictionary<string, object>
+                        {
+                            { "message", new Dictionary<string, object> { { "content", wanted }, { "contentType", "text" } } },
+                            { "expiryDateTime", GraphTime(DateTime.UtcNow.AddMinutes(MessageExpiryMinutes)) },
+                        });
+                        lock (sync) shownMessage = wanted;
+                    }
+                    else if (shown != null)
+                    {
+                        lock (sync) shownMessage = null;
+                        RestoreStatusMessage(shown);
+                    }
+                    problemReported = false;
+                }
+                catch (Exception ex) { Report("Couldn't update your Teams status message: " + ex.Message); }
+            }
+        }
+
+        // Puts back the user's own status message (or clears ours) now. Used when signing out or exiting.
+        void TakeDownStatusMessage()
+        {
+            string shown;
+            lock (sync) { wantedMessage = null; shown = shownMessage; shownMessage = null; }
+            messageTimer.Change(Timeout.Infinite, Timeout.Infinite);
+            if (shown == null) return;
+            lock (graphGate)
+            {
+                try { RestoreStatusMessage(shown); }
+                catch (Exception ex) { Report("Couldn't clear your Teams status message (it expires on its own within an hour): " + ex.Message); }
+            }
+        }
+
+        // shown is the message this app set. Leaves things alone if the user changed it in Teams meanwhile.
+        void RestoreStatusMessage(string shown)
+        {
+            var previous = previousMessage;
+            previousMessage = null;
+            if (previous != null && Expired(previous)) previous = null;
+            var current = CurrentStatusMessage();
+            if (current != null && ContentOf(current) != shown) return;
+            PostStatusMessage(previous ?? new Dictionary<string, object>
+            {
+                { "message", new Dictionary<string, object> { { "content", "" }, { "contentType", "text" } } },
+            });
+        }
+
+        // The user's current status message ({message, expiryDateTime}), or null when there isn't one.
+        Dictionary<string, object> CurrentStatusMessage()
+        {
+            object value;
+            var status = ReadPresence().TryGetValue("statusMessage", out value) ? value as Dictionary<string, object> : null;
+            if (status == null || string.IsNullOrEmpty(ContentOf(status))) return null;
+            var kept = new Dictionary<string, object> { { "message", status["message"] } };
+            object expiry;
+            if (status.TryGetValue("expiryDateTime", out expiry) && expiry != null) kept["expiryDateTime"] = expiry;
+            return kept;
+        }
+
+        // True when a saved status message's expiry (in UTC) has passed, so it shouldn't be put back.
+        static bool Expired(Dictionary<string, object> status)
+        {
+            object value;
+            var expiry = status.TryGetValue("expiryDateTime", out value) ? value as Dictionary<string, object> : null;
+            if (expiry == null || !"UTC".Equals(expiry["timeZone"] as string, StringComparison.OrdinalIgnoreCase)) return false;
+            DateTime at;
+            return DateTime.TryParse(expiry["dateTime"] as string, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal, out at)
+                && at <= DateTime.UtcNow;
+        }
+
+        static string ContentOf(Dictionary<string, object> status)
+        {
+            object message, content;
+            var inner = status.TryGetValue("message", out message) ? message as Dictionary<string, object> : null;
+            return inner != null && inner.TryGetValue("content", out content) ? ((content as string) ?? "").Trim() : null;
+        }
+
+        void PostStatusMessage(Dictionary<string, object> statusMessage)
+        {
+            PostPresence("setStatusMessage", new Dictionary<string, object> { { "statusMessage", statusMessage } });
+        }
+
+        static Dictionary<string, object> GraphTime(DateTime utc)
+        {
+            return new Dictionary<string, object> { { "dateTime", utc.ToString("yyyy-MM-ddTHH:mm:ss") }, { "timeZone", "UTC" } };
+        }
+
         // Shows one message per run of failures, so a dropped network doesn't pop up a balloon every renewal.
         void Report(string message)
         {
@@ -206,7 +337,8 @@ namespace Krabbz.Blynclight
             using (var web = new WebClient())
             {
                 web.Headers[HttpRequestHeader.Authorization] = "Bearer " + token;
-                web.Headers[HttpRequestHeader.ContentType] = "application/json";
+                web.Headers[HttpRequestHeader.ContentType] = "application/json; charset=utf-8";
+                web.Encoding = Encoding.UTF8; // Custom status messages can hold any characters.
                 web.UploadString(GraphUsers + user + "/presence/" + action, "POST", Json.Serialize(body));
             }
         }
@@ -248,22 +380,28 @@ namespace Krabbz.Blynclight
         {
             try
             {
-                string token = AccessToken();
-                string user;
-                lock (sync) user = userId;
-                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
-                using (var web = new WebClient())
-                {
-                    web.Headers[HttpRequestHeader.Authorization] = "Bearer " + token;
-                    var result = (Dictionary<string, object>)Json.DeserializeObject(web.DownloadString(GraphUsers + user + "/presence"));
-                    problemReported = false;
-                    return result["availability"] as string;
-                }
+                var result = ReadPresence();
+                problemReported = false;
+                return result["availability"] as string;
             }
             catch (Exception ex)
             {
                 Report("Couldn't read your Teams status: " + ex.Message);
                 return null;
+            }
+        }
+
+        Dictionary<string, object> ReadPresence()
+        {
+            string token = AccessToken();
+            string user;
+            lock (sync) user = userId;
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+            using (var web = new WebClient())
+            {
+                web.Headers[HttpRequestHeader.Authorization] = "Bearer " + token;
+                web.Encoding = Encoding.UTF8;
+                return (Dictionary<string, object>)Json.DeserializeObject(web.DownloadString(GraphUsers + user + "/presence"));
             }
         }
 
@@ -427,6 +565,8 @@ namespace Krabbz.Blynclight
             bool wasOnCall;
             lock (sync) { wasOnCall = onCall; onCall = false; }
             if (wasOnCall) TryClear();
+            TakeDownStatusMessage();
+            messageTimer.Dispose();
         }
 
         class TokenException : Exception

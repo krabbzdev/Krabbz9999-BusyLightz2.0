@@ -4,7 +4,7 @@ using Microsoft.Win32;
 
 namespace Krabbz.Blynclight
 {
-    // User settings, stored under HKCU\Software\Krabbz9999\Blynclight App Control. On/off settings default to on.
+    // User settings, stored under HKCU\Software\Krabbz9999\Blynclight App Control. On/off settings default to on unless noted.
     public static class AppSettings
     {
         const string SettingsKey = @"Software\Krabbz9999\Blynclight App Control";
@@ -51,12 +51,34 @@ namespace Krabbz.Blynclight
             }
         }
 
-        static bool Get(string name)
+        // Teams status message shown while the lights are red. Off by default, since it changes what coworkers see.
+        public static readonly string[] TeamsStatusMessageChoices =
+            { "On a video call", "In a meeting", "On a phone call", "Heads down, please message me", "Back in a few minutes" };
+        public const int TeamsStatusMessageMaxLength = 280;
+        public static bool TeamsStatusMessageOn { get { return Get("TeamsStatusMessageOn", false); } set { Set("TeamsStatusMessageOn", value); } }
+        public static string TeamsStatusMessage
+        {
+            get
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(SettingsKey))
+                {
+                    string value = key == null ? null : key.GetValue("TeamsStatusMessage") as string;
+                    return string.IsNullOrWhiteSpace(value) ? TeamsStatusMessageChoices[0] : value;
+                }
+            }
+            set
+            {
+                using (var key = Registry.CurrentUser.CreateSubKey(SettingsKey))
+                    key.SetValue("TeamsStatusMessage", value ?? "", RegistryValueKind.String);
+            }
+        }
+
+        static bool Get(string name, bool defaultValue = true)
         {
             using (var key = Registry.CurrentUser.OpenSubKey(SettingsKey))
             {
                 object value = key == null ? null : key.GetValue(name);
-                return !(value is int) || (int)value != 0;
+                return value is int ? (int)value != 0 : defaultValue;
             }
         }
 

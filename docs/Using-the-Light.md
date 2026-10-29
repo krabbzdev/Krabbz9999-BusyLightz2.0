@@ -38,7 +38,7 @@ The mode you picked is filled in with its color. The color you pick is remembere
 
 Red, Green and On A Call *override* your Teams status, so it's easy to forget one is still on. While one is on, the window shows **Override on** and the tray icon gets a small white badge. After **15 minutes** the lights go back to **Follow Teams Status** on their own, and a notification says so. The countdown shows in the window and when you hover over the tray icon, and it keeps counting through restarts. Picking any color again starts the timer over.
 
-Change how long overrides last (5 minutes to 4 hours) in [Settings](#settings). To keep overrides on until you change them, untick **Go back to Follow Teams Status after Red, Green or On A Call**.
+Change how long overrides last (5 minutes to 4 hours) in [Settings](#settings). To keep overrides on until you change them, untick **Go back to Follow Teams Status after**.
 
 **During a call** the light flashes red and blue automatically (or shows steady red, if you turn flashing off in Settings) and goes back to your choice afterwards. See [Call Detection](Call-Detection.md). If you pick a color *during* a call, your choice wins until that call ends.
 
@@ -86,13 +86,13 @@ Test Lights's color changes don't notify. Turn notifications off in [Settings](#
 
 ## Settings
 
-Open with the **⚙ Settings** button in the window or **Settings...** in the tray menu. Changes take effect immediately. Every checkbox is on by default.
+Open with the **⚙ Settings** button in the window or **Settings...** in the tray menu. Changes take effect immediately. Every checkbox is on by default, except the Teams status message.
 
 | Setting | What it does |
 | --- | --- |
 | **Start with Windows** | Starts the app when you sign in. |
 | **Open the window at sign-in** | When off, the app starts quietly in the tray. |
-| **Go back to Follow Teams Status after Red, Green or On A Call** | The [override timer](#override-timer). On by default. Pick how long overrides last on the right: 5, 10, 15 (default) or 30 minutes, or 1, 2 or 4 hours. |
+| **Go back to Follow Teams Status after** | The [override timer](#override-timer) for Red, Green and On A Call. On by default. Pick how long overrides last on the right: 5, 10, 15 (default) or 30 minutes, or 1, 2 or 4 hours. |
 | **Show a notification when the lights change** | The pop-ups described above. |
 | **Hotkeys: Alt+R / Alt+G** | Turn off if they clash with another program. |
 | **Install updates automatically** | When off, the app only updates when you click **Check now** / **Check for updates**. |
@@ -100,6 +100,7 @@ Open with the **⚙ Settings** button in the window or **Settings...** in the tr
 | **Flash red and blue instead of steady red** | On by default: lights flash red and blue quickly during calls. Untick for steady red. |
 | **Show me as Busy in Teams during calls in other apps** | See [Teams Status](Teams-Status.md#busy-in-teams-during-other-calls). |
 | **Microsoft Teams** | Shows who you're connected as, with **Connect** / **Disconnect**, and **Organization's Teams app...** for [organization setup](Setting-Up-Teams-for-Your-Organization.md). |
+| **Set my Teams status message while my lights are red** | Off by default. Pick a message, or **Custom message...** to type your own. See [Teams Status](Teams-Status.md#status-message-while-your-lights-are-red). |
 | **Setup checklist...** | Opens the [Setup Checklist](Setup-Checklist.md). |
 
 ## Colors at a glance

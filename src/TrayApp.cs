@@ -623,6 +623,15 @@ namespace Krabbz.Blynclight
             if (partying && !flashTimer.Enabled) partyHue = 0;
             flashTimer.Enabled = partying;
             UpdateDisplay();
+            UpdateTeamsMessage();
+        }
+
+        // While the lights are red by the user's choice or because of a call, shows their chosen Teams status message.
+        void UpdateTeamsMessage()
+        {
+            if (presence == null) return;
+            bool red = callApp != null || light.State == LightState.Red || light.State == LightState.CallFlash;
+            presence.ShowStatusMessage(red && AppSettings.TeamsStatusMessageOn ? AppSettings.TeamsStatusMessage : null);
         }
 
         public string StatusText
