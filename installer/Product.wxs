@@ -2,13 +2,13 @@
 <!-- Per-user install: no admin rights needed. Installs to %LOCALAPPDATA%\Programs and starts at sign-in. -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
-  <!-- Display name is Krabbz9999-BusyLightz2.0. The exe, install folder and startup entry keep their original
+  <!-- Display name is KrabbzDev-BusyLightz2.0. The exe, install folder and startup entry keep their original
        "Krabbz9999 Blynclight App Control" names: installed copies relaunch themselves by exe path after updating. -->
   <Product Id="*"
-           Name="Krabbz9999-BusyLightz2.0"
+           Name="KrabbzDev-BusyLightz2.0"
            Language="1033"
            Version="$(var.Version)"
-           Manufacturer="Krabbz9999"
+           Manufacturer="KrabbzDev"
            UpgradeCode="{B7D1A4C2-58E3-4F0B-A96D-2C4E7F81D935}">
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" InstallPrivileges="limited"
              Description="Controls Embrava Blynclight and Luxafor Flag busy lights together." />
@@ -59,14 +59,14 @@
 
     <DirectoryRef Id="ProgramMenuFolder">
       <Component Id="StartMenuShortcut" Guid="{A62E0D58-7C19-4B3F-9D84-1E5F3A6B2C70}">
-        <Shortcut Id="StartMenuShortcut" Name="Krabbz9999-BusyLightz2.0"
+        <Shortcut Id="StartMenuShortcut" Name="KrabbzDev-BusyLightz2.0"
                   Target="[#TrayExe]" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon.exe" />
         <RegistryValue Root="HKCU" Key="Software\Krabbz9999\Blynclight App Control"
                        Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </DirectoryRef>
 
-    <Feature Id="Main" Title="Krabbz9999-BusyLightz2.0" Level="1">
+    <Feature Id="Main" Title="KrabbzDev-BusyLightz2.0" Level="1">
       <ComponentRef Id="TrayExe" />
       <ComponentRef Id="StartMenuShortcut" />
       <ComponentRef Id="TeamsAppIds" />

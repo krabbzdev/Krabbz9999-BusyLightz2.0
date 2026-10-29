@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
-  Builds Krabbz9999-BusyLightz2.0 (tray app) and its per-user MSI (no admin rights needed).
-  Output: dist\Krabbz9999-BusyLightz2.0-<version>.msi
+  Builds KrabbzDev-BusyLightz2.0 (tray app) and its per-user MSI (no admin rights needed).
+  Output: dist\KrabbzDev-BusyLightz2.0-<version>.msi
 
 .EXAMPLE
   .\build.ps1 -Version 2.0.3            # build only
@@ -11,7 +11,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$Version,
     # GitHub owner/repo the app checks for newer releases; empty disables auto-update.
-    [string]$UpdateRepo = 'showtechclove1/Krabbz9999-BusyLightz2.0',
+    [string]$UpdateRepo = 'krabbzdev/KrabbzDev-BusyLightz2.0',
     # Entra app registration (Application and Directory IDs) for "Connect to Microsoft Teams", created by
     # scripts\New-EntraAppRegistration.ps1. Not secrets. Pass empty strings to build without the feature.
     [string]$GraphClientId = '0213fb00-29af-4f12-a2f9-8b90447266d3',
@@ -80,8 +80,8 @@ if (-not (Test-Path $icon)) { New-AppIcon $icon }
 # Stamp the version and build date into the exe; the app shows them in its window and tray menu.
 @"
 using System.Reflection;
-[assembly: AssemblyTitle("Krabbz9999-BusyLightz2.0")]
-[assembly: AssemblyProduct("Krabbz9999-BusyLightz2.0")]
+[assembly: AssemblyTitle("KrabbzDev-BusyLightz2.0")]
+[assembly: AssemblyProduct("KrabbzDev-BusyLightz2.0")]
 [assembly: AssemblyVersion("$Version.0")]
 [assembly: AssemblyFileVersion("$Version.0")]
 [assembly: AssemblyInformationalVersion("$Version")]
@@ -96,13 +96,13 @@ Write-Host 'Compiling tray app...'
 Invoke-Tool $csc @('/nologo', '/optimize+', '/target:winexe', "/win32icon:$icon",
     "/out:$build\Krabbz9999 Blynclight App Control.exe",
     '/reference:System.Core.dll', '/reference:System.Drawing.dll', '/reference:System.Windows.Forms.dll', '/reference:System.Web.Extensions.dll', '/reference:System.Web.dll', '/reference:System.Security.dll',
-    "$src\BlyncCore.cs", "$src\LightController.cs", "$src\TrayApp.cs", "$src\Updater.cs", "$src\CallDetector.cs", "$src\EmbravaConnect.cs", "$src\TeamsPresence.cs", "$src\SetupForm.cs", "$src\TeamsAppConfig.cs", "$src\AppSettings.cs", "$src\SettingsForm.cs", "$build\AssemblyInfo.cs")
+    "$src\BlyncCore.cs", "$src\LightController.cs", "$src\TrayApp.cs", "$src\ControlForm.cs", "$src\Updater.cs", "$src\CallDetector.cs", "$src\EmbravaConnect.cs", "$src\TeamsPresence.cs", "$src\SetupForm.cs", "$src\TeamsAppConfig.cs", "$src\AppSettings.cs", "$src\SettingsForm.cs", "$build\AssemblyInfo.cs")
 
 Write-Host 'Building MSI...'
 Invoke-Tool "$wix\candle.exe" @('-nologo', '-arch', 'x64', '-ext', 'WixUtilExtension',
     "-dVersion=$Version", "-dBuildDir=$build", "-dAssetsDir=$assets",
     '-out', "$build\Product.wixobj", "$root\installer\Product.wxs")
-$msi = Join-Path $dist "Krabbz9999-BusyLightz2.0-$Version.msi"
+$msi = Join-Path $dist "KrabbzDev-BusyLightz2.0-$Version.msi"
 Invoke-Tool "$wix\light.exe" @('-nologo', '-ext', 'WixUtilExtension', '-spdb', '-out', $msi, "$build\Product.wixobj")
 
 Write-Host "Built $msi"
@@ -115,12 +115,12 @@ if ($Publish) {
     # kept too, so download links shared before the rename keep working.
     $releaseDir = Join-Path $dist 'release'
     New-Item -ItemType Directory -Force $releaseDir | Out-Null
-    $releaseMsis = @('Krabbz9999-BusyLightz2.0.msi', 'Krabbz9999-Blynclight-App-Control.msi') | ForEach-Object {
+    $releaseMsis = @('KrabbzDev-BusyLightz2.0.msi', 'Krabbz9999-BusyLightz2.0.msi', 'Krabbz9999-Blynclight-App-Control.msi') | ForEach-Object {
         $path = Join-Path $releaseDir $_
         Copy-Item $msi $path -Force
         $path
     }
     Write-Host "Publishing release v$Version to $UpdateRepo..."
     Invoke-Tool $gh (@('release', 'create', "v$Version") + $releaseMsis + @('--repo', $UpdateRepo,
-        '--title', "Version $Version", '--notes', "Krabbz9999-BusyLightz2.0 $Version"))
+        '--title', "Version $Version", '--notes', "KrabbzDev-BusyLightz2.0 $Version"))
 }

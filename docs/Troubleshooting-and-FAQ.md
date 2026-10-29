@@ -47,7 +47,7 @@ Another program already uses that key combination; the app tells you when it sta
 ## The app didn't update
 
 - Click **Check for updates** in the window or tray menu. It says *"You're on the latest version"* if there's nothing newer.
-- Updates only arrive once they're published on the [Releases](https://github.com/showtechclove1/Krabbz9999-BusyLightz2.0/releases) page.
+- Updates only arrive once they're published on the [Releases](https://github.com/krabbzdev/KrabbzDev-BusyLightz2.0/releases) page.
 - Update logs are in `%LOCALAPPDATA%\Krabbz9999 Blynclight\updates`.
 
 ## Windows says the installer is from an unknown publisher

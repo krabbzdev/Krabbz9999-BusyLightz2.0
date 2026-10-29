@@ -153,7 +153,7 @@ namespace Krabbz.Blynclight
         const string EntraAppsUrl = "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade";
 
         const string AdminInstructions =
-            "Please create a Microsoft Entra app registration for Krabbz9999-BusyLightz2.0 (about 3 minutes):\r\n\r\n" +
+            "Please create a Microsoft Entra app registration for KrabbzDev-BusyLightz2.0 (about 3 minutes):\r\n\r\n" +
             "1. Entra admin center > App registrations > New registration.\r\n" +
             "2. Name: Krabbz9999 Blynclight. Supported account types: this organizational directory only (single tenant).\r\n" +
             "3. Redirect URI: platform \"Public client/native (mobile & desktop)\", value http://localhost\r\n" +
@@ -163,7 +163,7 @@ namespace Krabbz.Blynclight
             "Then send me the Application (client) ID and Directory (tenant) ID from the app's Overview page.\r\n" +
             "To deploy to everyone, add TEAMSCLIENTID=<client ID> TEAMSTENANTID=<tenant ID> to the installer's command line.\r\n\r\n" +
             "Script alternative (creates or reuses the registration): scripts/New-EntraAppRegistration.ps1 in " +
-            "https://github.com/showtechclove1/Krabbz9999-BusyLightz2.0";
+            "https://github.com/krabbzdev/KrabbzDev-BusyLightz2.0";
 
         readonly TrayContext tray;
         readonly TextBox clientBox = new TextBox();

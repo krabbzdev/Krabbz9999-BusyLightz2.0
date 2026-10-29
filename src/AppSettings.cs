@@ -4,7 +4,7 @@ using Microsoft.Win32;
 
 namespace Krabbz.Blynclight
 {
-    // User settings, stored under HKCU\Software\Krabbz9999\Blynclight App Control. All default to on.
+    // User settings, stored under HKCU\Software\Krabbz9999\Blynclight App Control. On/off settings default to on.
     public static class AppSettings
     {
         const string SettingsKey = @"Software\Krabbz9999\Blynclight App Control";
@@ -16,6 +16,25 @@ namespace Krabbz.Blynclight
         public static bool AutoUpdate { get { return Get("AutoUpdate"); } set { Set("AutoUpdate", value); } }
         public static bool CallsTurnRed { get { return Get("CallsTurnRed"); } set { Set("CallsTurnRed", value); } }
         public static bool OverrideTimesOut { get { return Get("OverrideTimesOut"); } set { Set("OverrideTimesOut", value); } }
+        // How long Red, Green and On A Call last before going back to Follow Teams Status.
+        public static readonly int[] OverrideMinuteChoices = { 5, 10, 15, 30, 60, 120, 240 };
+        public const int DefaultOverrideMinutes = 15;
+        public static int OverrideMinutes
+        {
+            get
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(SettingsKey))
+                {
+                    object value = key == null ? null : key.GetValue("OverrideMinutes");
+                    return value is int && (int)value > 0 ? (int)value : DefaultOverrideMinutes;
+                }
+            }
+            set
+            {
+                using (var key = Registry.CurrentUser.CreateSubKey(SettingsKey))
+                    key.SetValue("OverrideMinutes", value, RegistryValueKind.DWord);
+            }
+        }
         public static bool FlashOnCalls { get { return Get("FlashOnCalls"); } set { Set("FlashOnCalls", value); } }
         public static bool TeamsBusyOnCalls { get { return Get("TeamsBusyOnCalls"); } set { Set("TeamsBusyOnCalls", value); } }
         public static bool StartWithWindows { get { return Get("StartWithWindows"); } set { Set("StartWithWindows", value); ApplyStartup(); } }

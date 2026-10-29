@@ -33,8 +33,11 @@ namespace Krabbz.Blynclight
                 v => AppSettings.OpenWindowAtSignIn = v, 24);
             startWithWindows.CheckedChanged += delegate { openWindow.Enabled = startWithWindows.Checked; };
             openWindow.Enabled = startWithWindows.Checked;
-            Box("Back to Follow Teams Status " + TrayContext.OverrideMinutes / 60 + " hour after Red, Green or On A Call",
+            var timesOut = Box("Go back to Follow Teams Status after Red, Green or On A Call",
                 AppSettings.OverrideTimesOut, v => { AppSettings.OverrideTimesOut = v; tray.ApplySettings(); });
+            var minutes = OverrideMinutesPicker(timesOut);
+            timesOut.CheckedChanged += delegate { minutes.Enabled = timesOut.Checked; };
+            minutes.Enabled = timesOut.Checked;
             Box("Show a notification when the lights change", AppSettings.ShowNotifications, v => AppSettings.ShowNotifications = v);
             Box("Hotkeys: Alt+R for Red, Alt+G for Green", AppSettings.HotkeysEnabled, v => { AppSettings.HotkeysEnabled = v; tray.ApplySettings(); });
             var updates = Box("Install updates automatically", AppSettings.AutoUpdate, v => AppSettings.AutoUpdate = v);
@@ -130,6 +133,33 @@ namespace Krabbz.Blynclight
             Controls.Add(box);
             y += 30;
             return box;
+        }
+
+        // How long an override lasts, next to its checkbox. A change restarts a running timer with the new length.
+        ComboBox OverrideMinutesPicker(CheckBox row)
+        {
+            var picker = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Bounds = new Rectangle(350, row.Top - 3, 130, 30) };
+            int current = AppSettings.OverrideMinutes;
+            if (Array.IndexOf(AppSettings.OverrideMinuteChoices, current) < 0) current = AppSettings.DefaultOverrideMinutes;
+            foreach (int choice in AppSettings.OverrideMinuteChoices)
+            {
+                picker.Items.Add(DescribeMinutes(choice));
+                if (choice == current) picker.SelectedIndex = picker.Items.Count - 1;
+            }
+            picker.SelectedIndexChanged += delegate
+            {
+                AppSettings.OverrideMinutes = AppSettings.OverrideMinuteChoices[picker.SelectedIndex];
+                tray.RestartOverrideTimer();
+            };
+            Controls.Add(picker);
+            row.MaximumSize = new Size(picker.Left - row.Left - 8, 0);
+            return picker;
+        }
+
+        static string DescribeMinutes(int minutes)
+        {
+            if (minutes < 60) return minutes + " minutes";
+            return minutes == 60 ? "1 hour" : minutes / 60 + " hours";
         }
 
         void SideButton(CheckBox row, string text, EventHandler click)

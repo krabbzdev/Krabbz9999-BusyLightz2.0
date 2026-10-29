@@ -14,7 +14,7 @@ namespace Krabbz.Blynclight
     {
         // Display name. The exe file, install folder, settings folder and registry key keep their original
         // "Krabbz9999 Blynclight..." names, because installed copies relaunch themselves by exe path after updating.
-        public const string AppName = "Krabbz9999-BusyLightz2.0";
+        public const string AppName = "KrabbzDev-BusyLightz2.0";
 
         // Stamped by build.ps1 into build\AssemblyInfo.cs.
         public static readonly Version Version = Assembly.GetExecutingAssembly().GetName().Version;
@@ -95,8 +95,6 @@ namespace Krabbz.Blynclight
         const int UpdateCheckMs = 6 * 60 * 60 * 1000;
         // How often to read Teams presence while following Teams status.
         const int TeamsPollMs = 20 * 1000;
-        // Red, Green and On A Call go back to Follow Teams Status after this long (can be turned off in Settings).
-        public const int OverrideMinutes = 60;
 
         readonly LightController light = new LightController();
         readonly CallDetector calls;
@@ -119,7 +117,7 @@ namespace Krabbz.Blynclight
         // Counts down a color override and switches back to Follow Teams Status when it runs out.
         readonly System.Windows.Forms.Timer overrideTimer = new System.Windows.Forms.Timer { Interval = 1000 };
         readonly RegisteredWaitHandle showWait;
-        readonly Dictionary<Color, Icon> icons = new Dictionary<Color, Icon>();
+        readonly Dictionary<string, Icon> icons = new Dictionary<string, Icon>();
         readonly Dictionary<string, ToolStripMenuItem> stateItems = new Dictionary<string, ToolStripMenuItem>();
         ControlForm form;
         SetupForm setupForm;
@@ -407,14 +405,26 @@ namespace Krabbz.Blynclight
             Refresh();
         }
 
+        // Called when the override length changes: a running timer starts over with the new length.
+        public void RestartOverrideTimer()
+        {
+            if (light.ReturnToTeamsAt == null) return;
+            light.SetReturnToTeams(null);
+            StartOverrideTimerIfNeeded();
+            Refresh();
+        }
+
         void StartOverrideTimerIfNeeded()
         {
             if (AppSettings.OverrideTimesOut && LightController.OverridesTeams(light.State) && light.ReturnToTeamsAt == null)
-                light.SetReturnToTeams(DateTime.UtcNow.AddMinutes(OverrideMinutes));
+                light.SetReturnToTeams(DateTime.UtcNow.AddMinutes(AppSettings.OverrideMinutes));
         }
 
-        // e.g. "Back to Teams status in 59:12", or null when no override timer is running.
-        public string OverrideCountdown
+        // True while the user's own Red, Green or On A Call choice is overriding Teams status.
+        public bool OverrideOn { get { return LightController.OverridesTeams(light.State); } }
+
+        // e.g. "14:52", or null when no override timer is running.
+        public string OverrideTimeLeft
         {
             get
             {
@@ -422,15 +432,28 @@ namespace Krabbz.Blynclight
                 if (at == null || !AppSettings.OverrideTimesOut) return null;
                 var left = at.Value - DateTime.UtcNow;
                 if (left < TimeSpan.Zero) left = TimeSpan.Zero;
-                return "Back to Teams status in " + (int)left.TotalMinutes + ":" + left.Seconds.ToString("00");
+                return (int)left.TotalMinutes + ":" + left.Seconds.ToString("00");
+            }
+        }
+
+        // e.g. "Back to Teams status in 14:52", or null when no override timer is running.
+        public string OverrideCountdown
+        {
+            get
+            {
+                string left = OverrideTimeLeft;
+                return left == null ? null : "Back to Teams status in " + left;
             }
         }
 
         void UpdateTooltip()
         {
             string tip = Program.AppName + "\n" + StatusText;
-            string countdown = OverrideCountdown;
-            if (countdown != null) tip += "\n" + countdown;
+            if (OverrideOn)
+            {
+                string left = OverrideTimeLeft;
+                tip += "\nOverride on" + (left != null ? ", Teams in " + left : "");
+            }
             tray.Text = tip.Length > 63 ? tip.Substring(0, 63) : tip;
         }
 
@@ -442,7 +465,7 @@ namespace Krabbz.Blynclight
             {
                 string overridden = LightState.Describe(light.State);
                 SetState(LightState.FollowTeams);
-                ShowBalloon("The " + overridden + " override ran for " + OverrideMinutes +
+                ShowBalloon("The " + overridden + " override ran for " + AppSettings.OverrideMinutes +
                     " minutes, so the lights are following your Teams status again.", ToolTipIcon.Info);
                 return;
             }
@@ -632,7 +655,7 @@ namespace Krabbz.Blynclight
             else if (State == LightState.FollowTeams) DisplayColor = Color.FromArgb(98, 100, 167);
             else DisplayColor = Color.Black;
 
-            tray.Icon = IconFor(DisplayColor);
+            tray.Icon = IconFor(DisplayColor, OverrideOn);
             UpdateTooltip();
             // Check the user's own choice, even while a call is overriding it.
             foreach (var pair in stateItems) pair.Value.Checked = pair.Key == light.State;
@@ -672,10 +695,12 @@ namespace Krabbz.Blynclight
             tray.ShowBalloonTip(3000, Program.AppName, message, ToolTipIcon.None);
         }
 
-        Icon IconFor(Color color)
+        // A filled circle of the light's color. While an override is on, a white pin badge sits in the corner.
+        Icon IconFor(Color color, bool overrideOn)
         {
+            string key = color.ToArgb() + (overrideOn ? "+override" : "");
             Icon icon;
-            if (icons.TryGetValue(color, out icon)) return icon;
+            if (icons.TryGetValue(key, out icon)) return icon;
             using (var bmp = new Bitmap(32, 32))
             {
                 using (var g = Graphics.FromImage(bmp))
@@ -685,10 +710,19 @@ namespace Krabbz.Blynclight
                     g.SmoothingMode = SmoothingMode.AntiAlias;
                     g.FillEllipse(fill, 3, 3, 26, 26);
                     g.DrawEllipse(outline, 3, 3, 26, 26);
+                    if (overrideOn)
+                    {
+                        using (var badge = new SolidBrush(Color.White))
+                        using (var badgeOutline = new Pen(Color.FromArgb(40, 40, 40), 2))
+                        {
+                            g.FillEllipse(badge, 18, 18, 13, 13);
+                            g.DrawEllipse(badgeOutline, 18, 18, 13, 13);
+                        }
+                    }
                 }
                 icon = Icon.FromHandle(bmp.GetHicon());
             }
-            icons[color] = icon;
+            icons[key] = icon;
             return icon;
         }
 
@@ -707,163 +741,4 @@ namespace Krabbz.Blynclight
         }
     }
 
-    // The main window: current color plus buttons. Closing it hides it; the tray app keeps running.
-    class ControlForm : Form
-    {
-        readonly TrayContext tray;
-        readonly Panel swatch = new Panel();
-        readonly Label statusLabel = new Label();
-        // Which lights are connected, e.g. "Lights: Blynclight + Luxafor".
-        readonly Label lightsLabel = new Label();
-        readonly LinkLabel overrideLabel = new LinkLabel();
-        const string BackNowLink = "Back to Teams now";
-
-        public ControlForm(TrayContext tray)
-        {
-            this.tray = tray;
-            Text = Program.AppName;
-            Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-            ClientSize = new Size(400, 350);
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            MaximizeBox = false;
-            StartPosition = FormStartPosition.CenterScreen;
-            Font = new Font("Segoe UI", 10);
-
-            swatch.SetBounds(20, 20, 60, 60);
-            swatch.BorderStyle = BorderStyle.FixedSingle;
-            Controls.Add(swatch);
-
-            var caption = new Label { Text = "Current color", ForeColor = Color.Gray, AutoSize = true, Location = new Point(95, 24) };
-            Controls.Add(caption);
-
-            statusLabel.Font = new Font("Segoe UI", 13, FontStyle.Bold);
-            statusLabel.AutoSize = true;
-            statusLabel.Location = new Point(95, 46);
-            Controls.Add(statusLabel);
-
-            lightsLabel.ForeColor = Color.Gray;
-            lightsLabel.Font = new Font("Segoe UI", 8.5f);
-            lightsLabel.AutoSize = true;
-            lightsLabel.Location = new Point(96, 72);
-            Controls.Add(lightsLabel);
-
-            var settings = new Button { Text = "⚙ Settings", Font = new Font("Segoe UI", 9), Bounds = new Rectangle(290, 16, 90, 30) };
-            settings.Click += delegate { tray.ShowSettings(); };
-            Controls.Add(settings);
-
-            AddButton("Red", "(Busy Mode)", LightState.Red, 20, 100, 175, 54);
-            AddButton("Green", "(Open Mode)", LightState.Green, 205, 100, 175, 54);
-            AddButton("On A Call", "(Flashing red/blue)", LightState.CallFlash, 20, 164, 175, 54);
-            AddButton("Test Lights", "(Cycling Colors)", LightState.Party, 205, 164, 175, 54);
-            AddButton("Off", null, LightState.Off, 20, 228, 175, 40);
-            AddButton("Follow Teams Status", null, LightState.FollowTeams, 205, 228, 175, 40);
-
-            // Override counter: how long until Red / Green / On A Call goes back to Teams status. Hidden otherwise.
-            overrideLabel.AutoSize = true;
-            overrideLabel.Font = new Font("Segoe UI", 9, FontStyle.Bold);
-            overrideLabel.ForeColor = Color.FromArgb(98, 100, 167);
-            overrideLabel.LinkColor = Color.FromArgb(98, 100, 167);
-            overrideLabel.LinkBehavior = LinkBehavior.HoverUnderline;
-            overrideLabel.Location = new Point(20, 278);
-            overrideLabel.LinkClicked += delegate { tray.SetState(LightState.FollowTeams); };
-            Controls.Add(overrideLabel);
-
-            var betaNote = new Label
-            {
-                Text = "This app replaces the Embrava Connect App. When you are on a call, your light should turn red " +
-                       "to let others know you are on a call. This is still BETA",
-                ForeColor = Color.FromArgb(160, 90, 0),
-                Font = new Font("Segoe UI", 9, FontStyle.Bold),
-                AutoSize = true,
-                MaximumSize = new Size(360, 0), // Wrap within the window.
-                Location = new Point(20, 304),
-            };
-            Controls.Add(betaNote);
-
-            var hint = new Label
-            {
-                Text = "Closing this window keeps the tray icon and light running.",
-                ForeColor = Color.Gray,
-                Font = new Font("Segoe UI", 8.5f),
-                AutoSize = true,
-                Location = new Point(20, betaNote.Bottom + 8),
-            };
-            Controls.Add(hint);
-
-            // "Version x · Built y", then a second line of links: Check for updates · Project page · Help.
-            string versionText = "Version " + Program.VersionText + "  ·  Built " + Program.BuildDate;
-            const string UpdatesLink = "Check for updates", ProjectLink = "Project page", HelpLink = "Help";
-            if (Program.UpdateRepo != null) versionText += "\n" + UpdatesLink + "  ·  " + ProjectLink + "  ·  " + HelpLink;
-            var version = new LinkLabel
-            {
-                Text = versionText,
-                ForeColor = Color.Gray,
-                Font = new Font("Segoe UI", 8.5f),
-                AutoSize = true,
-                LinkBehavior = LinkBehavior.HoverUnderline,
-                Location = new Point(20, hint.Bottom + 4),
-            };
-            version.Links.Clear();
-            if (Program.UpdateRepo != null)
-            {
-                version.Links.Add(versionText.IndexOf(UpdatesLink), UpdatesLink.Length, "updates");
-                version.Links.Add(versionText.IndexOf(ProjectLink), ProjectLink.Length, "project");
-                version.Links.Add(versionText.LastIndexOf(HelpLink), HelpLink.Length, "help");
-            }
-            version.LinkClicked += (sender, e) =>
-            {
-                if ((string)e.Link.LinkData == "updates") tray.CheckForUpdates(true);
-                else if ((string)e.Link.LinkData == "help") tray.OpenHelp();
-                else tray.OpenProjectPage();
-            };
-            Controls.Add(version);
-            ClientSize = new Size(ClientSize.Width, version.Bottom + 12);
-
-            tray.DisplayChanged += RefreshDisplay;
-            RefreshDisplay();
-        }
-
-        // subtitle is shown on a second line under the button's main text.
-        void AddButton(string text, string subtitle, string state, int x, int y, int width, int height)
-        {
-            string keys;
-            if (TrayContext.HotkeyText.TryGetValue(state, out keys)) text += "  (" + keys + ")";
-            if (subtitle != null) text += "\n" + subtitle;
-            var button = new Button { Text = text, Bounds = new Rectangle(x, y, width, height) };
-            button.Click += delegate { tray.SetState(state); };
-            Controls.Add(button);
-        }
-
-        void RefreshDisplay()
-        {
-            swatch.BackColor = tray.DisplayColor;
-            statusLabel.Text = tray.StatusText;
-            lightsLabel.Text = "Lights: " + tray.Light.LightSummary;
-
-            string countdown = tray.OverrideCountdown;
-            overrideLabel.Visible = countdown != null;
-            if (countdown != null)
-            {
-                string text = "⏱ " + countdown + "   ·   " + BackNowLink;
-                if (overrideLabel.Text != text)
-                {
-                    overrideLabel.Text = text;
-                    overrideLabel.Links.Clear();
-                    overrideLabel.Links.Add(text.IndexOf(BackNowLink), BackNowLink.Length);
-                }
-            }
-        }
-
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            if (e.CloseReason == CloseReason.UserClosing)
-            {
-                e.Cancel = true;
-                Hide();
-                return;
-            }
-            tray.DisplayChanged -= RefreshDisplay;
-            base.OnFormClosing(e);
-        }
-    }
 }

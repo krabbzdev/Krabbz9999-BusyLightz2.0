@@ -22,7 +22,7 @@ To read and set Teams status, the app signs users in with a **Microsoft Entra ap
 
 ## Option B: PowerShell script
 
-[`scripts/New-EntraAppRegistration.ps1`](https://github.com/showtechclove1/Krabbz9999-BusyLightz2.0/blob/main/scripts/New-EntraAppRegistration.ps1) does all of the above, or reuses and updates an existing registration, then prints the two IDs.
+[`scripts/New-EntraAppRegistration.ps1`](https://github.com/krabbzdev/KrabbzDev-BusyLightz2.0/blob/main/scripts/New-EntraAppRegistration.ps1) does all of the above, or reuses and updates an existing registration, then prints the two IDs.
 
 Needs the Microsoft Graph PowerShell modules (`Microsoft.Graph.Authentication`, `.Applications`, `.Identity.SignIns`) and an account that can create app registrations and grant consent, such as Global Administrator or Cloud Application Administrator. From a folder containing the script:
 
@@ -39,7 +39,7 @@ Pick one:
 - **Each user:** tray menu > **Setup checklist...** > *Your organization's Teams app* > **Set up...**, paste both IDs, then click **Save**. The app checks the tenant ID exists. The directory ID is pre-filled when the PC is joined to Entra.
 - **Deploy to everyone:** pass them to the installer:
   ```
-  msiexec /i Krabbz9999-BusyLightz2.0.msi /qn TEAMSCLIENTID=<client ID> TEAMSTENANTID=<tenant ID>
+  msiexec /i KrabbzDev-BusyLightz2.0.msi /qn TEAMSCLIENTID=<client ID> TEAMSTENANTID=<tenant ID>
   ```
 
 Then each user clicks **Connect** and signs in with their own work account.

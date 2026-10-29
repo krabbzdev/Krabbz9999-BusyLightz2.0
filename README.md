@@ -1,4 +1,4 @@
-# Krabbz9999-BusyLightz2.0
+# KrabbzDev-BusyLightz2.0
 
 **One app for your [Embrava Blynclight](https://embrava.com) and [Luxafor Flag](https://luxafor.com) busy lights, together.**
 
@@ -10,17 +10,17 @@ A small Windows tray app that controls USB busy lights directly over USB. Plug i
 
 > The reason I made this app, is I wanted an app to turn my lights red anytime I was on a call. Be it Zoom, Cytracom, Loom, Teams etc. If My MIC is hot, I want the lights red.
 >
-> — Krabbz9999
+> — KrabbzDev
 
-## ⬇️ [Download the installer (latest version)](https://github.com/showtechclove1/Krabbz9999-BusyLightz2.0/releases/latest/download/Krabbz9999-BusyLightz2.0.msi)
+## ⬇️ [Download the installer (latest version)](https://github.com/krabbzdev/KrabbzDev-BusyLightz2.0/releases/latest/download/KrabbzDev-BusyLightz2.0.msi)
 
-Release notes and older versions: [Releases](https://github.com/showtechclove1/Krabbz9999-BusyLightz2.0/releases)
+Release notes and older versions: [Releases](https://github.com/krabbzdev/KrabbzDev-BusyLightz2.0/releases)
 
 ## Features
 
 - **Embrava Blynclight + Luxafor Flag together:** every connected light shows the same color; lights plugged in later are matched within seconds. The window shows what's connected (e.g. *Lights: Blynclight + 2 Luxafor*).
 - **Red (Busy Mode) / Green (Open Mode)** from the window, tray menu or global hotkeys `Alt+R` / `Alt+G`
-- **Override timer:** Red, Green and On A Call go back to Follow Teams Status after 1 hour, with a countdown in the window
+- **Override timer:** Red, Green and On A Call go back to Follow Teams Status after 15 minutes (adjustable in Settings), with an **Override on** badge and countdown in the window and a badge on the tray icon
 - **Test Lights:** cycles smoothly through the full color wheel on every light, to check they all work and match
 - **Flashes red and blue whenever you're on a call:** any app using your microphone (Teams, Zoom, Cytracom, browser calls…) sets the lights flashing (or steady red, your choice in Settings), then back afterward. An ignore list handles recorders and noise-cancelling tools.
 - **Follow Teams Status:** green Available, red Busy / In a call, purple Do not disturb, yellow Away, off when Offline
@@ -35,7 +35,7 @@ Windows doesn't let installers pin apps to the Start menu. Pin it yourself (righ
 
 ## Install
 
-Run the downloaded `Krabbz9999-BusyLightz2.0.msi`. It installs just for you, with no admin prompt, and starts with Windows. The **Setup checklist** walks you through the rest. The installer isn't code-signed yet, so Windows may show an "unknown publisher" warning: click **More info > Run anyway**.
+Run the downloaded `KrabbzDev-BusyLightz2.0.msi`. It installs just for you, with no admin prompt, and starts with Windows. The **Setup checklist** walks you through the rest. The installer isn't code-signed yet, so Windows may show an "unknown publisher" warning: click **More info > Run anyway**.
 
 Updates install themselves silently. Details, IT deployment and uninstalling: [Installing and Updating](docs/Installing-and-Updating.md).
 

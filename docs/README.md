@@ -1,4 +1,4 @@
-# Krabbz9999-BusyLightz2.0
+# KrabbzDev-BusyLightz2.0
 
 **One app for your Embrava Blynclight and Luxafor Flag busy lights, together.**
 
@@ -10,7 +10,7 @@ A small Windows app that controls USB busy lights, so the people around you can 
 
 > The reason I made this app, is I wanted an app to turn my lights red anytime I was on a call. Be it Zoom, Cytracom, Loom, Teams etc. If My MIC is hot, I want the lights red.
 >
-> — Krabbz9999
+> — KrabbzDev
 
 ## What it does
 
@@ -23,7 +23,7 @@ A small Windows app that controls USB busy lights, so the people around you can 
 
 ## Quick start
 
-1. **[Download the installer](https://github.com/showtechclove1/Krabbz9999-BusyLightz2.0/releases/latest/download/Krabbz9999-BusyLightz2.0.msi)** and run it. No admin rights are needed.
+1. **[Download the installer](https://github.com/krabbzdev/KrabbzDev-BusyLightz2.0/releases/latest/download/KrabbzDev-BusyLightz2.0.msi)** and run it. No admin rights are needed.
 2. The **Setup checklist** opens the first time. Follow it top to bottom:
    - Check your lights are found.
    - Click **Connect** and sign in with your work account.

@@ -17,7 +17,7 @@ The MSI goes to `dist\`. **Use a new version number for every build you install 
 | Parameter | Default | Purpose |
 | --- | --- | --- |
 | `-Version` | required | Version shown in the app and used by the installer and updater |
-| `-UpdateRepo` | `showtechclove1/Krabbz9999-BusyLightz2.0` | GitHub repo the app checks for updates; empty disables updates |
+| `-UpdateRepo` | `krabbzdev/KrabbzDev-BusyLightz2.0` | GitHub repo the app checks for updates; empty disables updates |
 | `-GraphClientId`, `-GraphTenantId` | ShowTech's registration | Built-in Teams app registration; pass empty strings to build without one |
 | `-Publish` | off | Also publish the MSI as GitHub release `v<Version>` |
 
@@ -27,7 +27,7 @@ The MSI goes to `dist\`. **Use a new version number for every build you install 
 .\build.ps1 -Version 2.8.1 -Publish
 ```
 
-This creates release `v2.8.1` with the installer attached as `Krabbz9999-BusyLightz2.0.msi`, a fixed name so the README's *latest/download* link always works. A second copy named `Krabbz9999-Blynclight-App-Control.msi` keeps links from before the rename working.
+This creates release `v2.8.1` with the installer attached as `KrabbzDev-BusyLightz2.0.msi`, a fixed name so the README's *latest/download* link always works. A second copy named `Krabbz9999-Blynclight-App-Control.msi` keeps links from before the rename working.
 
 The exe file (`Krabbz9999 Blynclight App Control.exe`), install folder, settings folder and registry key keep their original names on purpose: installed copies relaunch themselves by exe path after updating, so renaming them would leave updated PCs not running. Installed apps pick it up within 6 hours, or right away with **Check for updates**.
 
