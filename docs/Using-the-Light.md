@@ -41,6 +41,7 @@ Every style has the same parts:
 | **Off** (bottom left) | Turns the light off. |
 | **⚙ Settings** (top right) | Opens [Settings](#settings). |
 | **Version line** | Shows the version and build date, plus **Check for updates**, **Project page** and **Help** (this guide) links. |
+| **☕ Buy me a coffee** (bottom right) | Opens [KrabbzDev's Buy Me a Coffee page](https://buymeacoffee.com/krabbzdev), if you'd like to say thanks. Also in the tray menu. |
 
 The mode you picked is filled in with its color. The mode you pick is remembered, even after a restart, and is put back if you unplug and replug the light.
 
@@ -69,6 +70,7 @@ Change how long overrides last (5 minutes to 4 hours) in [Settings](#settings). 
 | **Check for updates** | Looks for a newer version now. |
 | **Project page on GitHub** | Opens this project's page. |
 | **Help (user guide)** | Opens this guide. |
+| **☕ Buy me a coffee** | Opens KrabbzDev's Buy Me a Coffee page. |
 | **Exit tray app** | Closes the app. The light stays on its last color (Test Lights and flashing turn off). The app starts again at your next sign-in. |
 
 The tick in the menu shows the color *you* chose, even while a call is temporarily showing red.

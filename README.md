@@ -18,6 +18,10 @@ A small Windows tray app that controls USB busy lights directly over USB, so the
 
 Release notes and older versions: [Releases](https://github.com/krabbzdev/KrabbzDev-BusyLightz2.0/releases)
 
+If BusyLightz saves you a few interruptions, you can [buy me a coffee](https://buymeacoffee.com/krabbzdev).
+
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/krabbzdev)
+
 ## Features
 
 ### Your lights

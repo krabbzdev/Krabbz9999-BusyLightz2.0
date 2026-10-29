@@ -31,6 +31,7 @@ namespace Krabbz.Blynclight
         public static readonly Font Status = new Font("Segoe UI Semibold", 16f);
         public static readonly Font Hero = new Font("Segoe UI Semibold", 20f);
         public static readonly Font SmallStrong = new Font("Segoe UI Semibold", 8.5f);
+        public static readonly Font Tiny = new Font("Segoe UI Semibold", 7f);
         // The mode icons; null where Windows lacks the font (before Windows 10).
         public static readonly Font Icons = IconFont();
 
@@ -781,6 +782,7 @@ namespace Krabbz.Blynclight
             };
             FooterLink(footer, testLink, "Test lights", Pad, LightState.Party);
             FooterLink(footer, offLink, "Off", Pad + 120, LightState.Off);
+            AddCoffeeButton(footer);
 
             string versionText = "Version " + Program.VersionText + "  ·  Built " + Program.BuildDate;
             const string UpdatesLink = "Check for updates", ProjectLink = "Project page", HelpLink = "Help";
@@ -817,6 +819,29 @@ namespace Krabbz.Blynclight
                 "to let others know. It's still in beta.\n\nClosing this window keeps the tray icon and lights running.");
             Controls.Add(footer);
             return footer;
+        }
+
+        // A Buy Me a Coffee yellow button in the footer's bottom right, under the beta note.
+        void AddCoffeeButton(Panel footer)
+        {
+            var yellow = Color.FromArgb(255, 221, 0);
+            var coffee = new Button
+            {
+                Text = "☕  Buy me a coffee",
+                FlatStyle = FlatStyle.Flat,
+                BackColor = yellow,
+                ForeColor = Color.FromArgb(24, 24, 28),
+                Font = Theme.Tiny,
+                Cursor = Cursors.Hand,
+                TabStop = false,
+                Padding = Padding.Empty,
+            };
+            coffee.FlatAppearance.BorderSize = 0;
+            coffee.FlatAppearance.MouseOverBackColor = Theme.Mix(yellow, Color.Black, 0.08);
+            coffee.Size = new Size(TextRenderer.MeasureText(coffee.Text, coffee.Font).Width + 8, 18);
+            coffee.Location = new Point(WindowWidth - Pad - coffee.Width, 60);
+            coffee.Click += delegate { tray.OpenCoffee(); };
+            footer.Controls.Add(coffee);
         }
 
         // Switching style or Light/Dark mode replaces the window, so stop listening once it's gone.

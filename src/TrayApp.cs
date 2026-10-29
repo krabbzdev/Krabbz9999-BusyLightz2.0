@@ -160,6 +160,7 @@ namespace Krabbz.Blynclight
                 menu.Items.Add("Project page on GitHub", null, delegate { OpenProjectPage(); });
                 menu.Items.Add("Help (user guide)", null, delegate { OpenHelp(); });
             }
+            menu.Items.Add("☕ Buy me a coffee", null, delegate { OpenCoffee(); });
             menu.Items.Add("Exit tray app", null, delegate { Application.Exit(); });
 
             tray = new NotifyIcon();
@@ -411,6 +412,14 @@ namespace Krabbz.Blynclight
         public void OpenHelp()
         {
             if (Program.UpdateRepo != null) System.Diagnostics.Process.Start("https://github.com/" + Program.UpdateRepo + "/blob/main/docs/README.md");
+        }
+
+        // KrabbzDev's tip jar.
+        const string CoffeeUrl = "https://buymeacoffee.com/krabbzdev";
+
+        public void OpenCoffee()
+        {
+            System.Diagnostics.Process.Start(CoffeeUrl);
         }
 
         public void OpenProjectPage()
