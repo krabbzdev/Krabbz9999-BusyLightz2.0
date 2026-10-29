@@ -28,7 +28,7 @@ namespace Krabbz.Blynclight
             const int width = 500;
 
             Heading("General");
-            AppearancePicker();
+            AppearancePickers();
             startWithWindows = Box("Start with Windows", AppSettings.StartWithWindows, v => AppSettings.StartWithWindows = v);
             openWindow = Box("Open the window at sign-in (untick to start in the tray only)", AppSettings.OpenWindowAtSignIn,
                 v => AppSettings.OpenWindowAtSignIn = v, 24);
@@ -41,7 +41,7 @@ namespace Krabbz.Blynclight
             timesOut.CheckedChanged += delegate { minutes.Enabled = timesOut.Checked; };
             minutes.Enabled = timesOut.Checked;
             Box("Show a notification when the lights change", AppSettings.ShowNotifications, v => AppSettings.ShowNotifications = v);
-            Box("Hotkeys: Alt+R for Red, Alt+G for Green", AppSettings.HotkeysEnabled, v => { AppSettings.HotkeysEnabled = v; tray.ApplySettings(); });
+            Box("Hotkeys: Alt+R for Busy, Alt+G for Available", AppSettings.HotkeysEnabled, v => { AppSettings.HotkeysEnabled = v; tray.ApplySettings(); });
             var updates = Box("Install updates automatically", AppSettings.AutoUpdate, v => AppSettings.AutoUpdate = v);
             if (Program.UpdateRepo != null) SideButton(updates, "Check now", delegate { tray.CheckForUpdates(true); });
 
@@ -77,7 +77,7 @@ namespace Krabbz.Blynclight
             orgApp.Click += delegate { ShowTeamsAppDialog(); };
             Controls.Add(orgApp);
             y += 44;
-            Box("Match my Teams status when I pick Busy, Open or On a call", AppSettings.TeamsBusyWhenPicked,
+            Box("Match my Teams status when I pick Busy, Available or On a call", AppSettings.TeamsBusyWhenPicked,
                 v => { AppSettings.TeamsBusyWhenPicked = v; tray.ApplySettings(); });
             var messageOn = Box("Set my Teams status message while my lights are red:",
                 AppSettings.TeamsStatusMessageOn, v => { AppSettings.TeamsStatusMessageOn = v; tray.ApplySettings(); });
@@ -146,16 +146,23 @@ namespace Krabbz.Blynclight
             return box;
         }
 
-        // Light or Dark colors. A change reopens the app's windows in the new colors.
-        void AppearancePicker()
+        // The window style and Light or Dark colors. A change reopens the app's windows in the new look.
+        void AppearancePickers()
         {
-            Controls.Add(new Label { Text = "Appearance", AutoSize = true, Location = new Point(24, y + 3) });
+            Picker("Window style", WindowStyles.Names, Array.IndexOf(WindowStyles.All, AppSettings.WindowStyle),
+                index => AppSettings.WindowStyle = WindowStyles.All[index]);
+            Picker("Appearance", new[] { "Light", "Dark" }, AppSettings.DarkMode ? 1 : 0, index => AppSettings.DarkMode = index == 1);
+        }
+
+        void Picker(string label, string[] choices, int current, Action<int> save)
+        {
+            Controls.Add(new Label { Text = label, AutoSize = true, Location = new Point(24, y + 3) });
             var picker = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Bounds = new Rectangle(350, y, 130, 30) };
-            picker.Items.AddRange(new object[] { "Light", "Dark" });
-            picker.SelectedIndex = AppSettings.DarkMode ? 1 : 0;
+            picker.Items.AddRange(choices);
+            picker.SelectedIndex = current;
             picker.SelectedIndexChanged += delegate
             {
-                AppSettings.DarkMode = picker.SelectedIndex == 1;
+                save(picker.SelectedIndex);
                 tray.ApplyTheme();
             };
             Controls.Add(picker);

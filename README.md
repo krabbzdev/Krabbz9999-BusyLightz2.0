@@ -4,7 +4,7 @@
 
 A small Windows tray app that controls USB busy lights directly over USB, so the people around you can see at a glance whether you're free, busy or on a call. Plug in any mix of Blynclights and Luxafor Flags, as many of each as you like, and they all show the same color at the same time. It replaces both Embrava Connect and Luxafor's own app. No vendor accounts or admin rights needed.
 
-<img src="docs/images/main-window.png" alt="The main window: a red status dot reading Red with an Override on badge, a countdown back to Teams status, and Busy, Open, On a call and Follow Teams buttons" width="400">
+<img src="docs/images/main-window.png" alt="The main window in the Orbit style: a green top with a ring reading Available, From Teams Status, and a switcher for Busy, Available, On a call and Follow Teams Status" width="440">
 
 📖 **[User guide](docs/README.md)**: every feature and how to use it.
 
@@ -23,8 +23,9 @@ Release notes and older versions: [Releases](https://github.com/krabbzdev/Krabbz
 ### Your lights
 
 - **Blynclight and Luxafor Flag together:** every connected light shows the same color, and lights plugged in later are matched within seconds. The window shows what's connected, e.g. *Lights: Blynclight + 2 Luxafor*.
-- **Four modes, one click each:** **Busy** (red), **Open** (green), **On a call** (flashing red and blue, for calls the app can't detect, like a desk phone) and **Follow Teams**. Pick them from the window, the tray menu, or anywhere with the hotkeys `Alt+R` (Busy) and `Alt+G` (Open).
-- **Override timer:** Busy, Open and On a call go back to Follow Teams on their own after 15 minutes, so you never forget one is on. Choose 5 minutes to 4 hours, or turn it off, in Settings. While an override is on, the window shows an **Override on** badge and a countdown, and the tray icon gets a small badge.
+- **Four modes, one click each:** **Busy** (red), **Available** (green), **On a call** (flashing red and blue, for calls the app can't detect, like a desk phone) and **Follow Teams Status**. Pick them from the window, the tray menu, or anywhere with the hotkeys `Alt+R` (Busy) and `Alt+G` (Available).
+- **Override timer:** Busy, Available and On a call go back to Follow Teams Status on their own after 15 minutes, so you never forget one is on. Choose 5 minutes to 4 hours, or turn it off, in Settings. While an override is on, the window shows a countdown and the tray icon gets a small badge.
+- **Three window styles:** **Orbit** (the default, shown above), **Color block** and **Fluent list**, each in Light or Dark mode.
 - **Test lights:** cycles smoothly through every color on every light, to check they all work and match.
 - **Off:** turns the lights off.
 
@@ -38,7 +39,7 @@ Release notes and older versions: [Releases](https://github.com/krabbzdev/Krabbz
 Connect once with a browser sign-in to your work account. No client secret is stored, and the sign-in is encrypted to your Windows account.
 
 - **Follow Teams status:** green Available, red Busy or In a call, purple Do not disturb, yellow Away, off when Offline.
-- **Teams matches what you pick:** picking Busy or On a call sets your Teams status to Busy, Open sets it to Available, and going back to Follow Teams returns it to normal.
+- **Teams matches what you pick:** picking Busy or On a call sets your Teams status to Busy, Available sets it to Available, and going back to Follow Teams Status returns it to normal.
 - **Busy in Teams during other calls:** during a Zoom, Cytracom or other non-Teams call, Teams shows you as *Busy, In a call*.
 - **Status message while your lights are red:** shows *On a video call* (the default), *In a meeting*, *On a phone call*, *Heads down, please message me*, *Back in a few minutes*, or your own message next to your name in Teams. Your earlier message comes back afterwards.
 
@@ -46,7 +47,7 @@ Connect once with a browser sign-in to your work account. No client secret is st
 
 - **Setup checklist** on first run, including setting up the Teams app for your organization.
 - **Light or Dark mode**, picked in Settings (Light is the default).
-- **Settings window** (⚙ in the app or tray menu): appearance, startup, notifications, hotkeys, override timer, automatic updates, call detection and the Teams options.
+- **Settings window** (⚙ in the app or tray menu): window style, appearance, startup, notifications, hotkeys, override timer, automatic updates, call detection and the Teams options.
 - **Notifications** when the lights change.
 - **Automatic, silent updates** from this repo's Releases, checked against GitHub's SHA-256 digest before installing, with a card afterwards listing what changed.
 - Starts at sign-in and lives in the system tray, with an icon that matches the lights.

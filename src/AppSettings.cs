@@ -4,6 +4,14 @@ using Microsoft.Win32;
 
 namespace Krabbz.Blynclight
 {
+    // The main window's layouts, as saved in the settings, with the names Settings shows for them.
+    public static class WindowStyles
+    {
+        public const string Orbit = "Orbit", ColorBlock = "ColorBlock", Fluent = "Fluent";
+        public static readonly string[] All = { Orbit, ColorBlock, Fluent };
+        public static readonly string[] Names = { "Orbit", "Color block", "Fluent list" };
+    }
+
     // User settings, stored under HKCU\Software\Krabbz9999\Blynclight App Control. On/off settings default to on unless noted.
     public static class AppSettings
     {
@@ -57,6 +65,23 @@ namespace Krabbz.Blynclight
             { "On a video call", "In a meeting", "On a phone call", "Heads down, please message me", "Back in a few minutes" };
         public const int TeamsStatusMessageMaxLength = 280;
         public static bool TeamsStatusMessageOn { get { return Get("TeamsStatusMessageOn"); } set { Set("TeamsStatusMessageOn", value); } }
+        // How the main window is laid out: one of WindowStyles. Orbit unless changed.
+        public static string WindowStyle
+        {
+            get
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(SettingsKey))
+                {
+                    string value = key == null ? null : key.GetValue("WindowStyle") as string;
+                    return Array.IndexOf(WindowStyles.All, value) >= 0 ? value : WindowStyles.Orbit;
+                }
+            }
+            set
+            {
+                using (var key = Registry.CurrentUser.CreateSubKey(SettingsKey))
+                    key.SetValue("WindowStyle", value, RegistryValueKind.String);
+            }
+        }
         // Light (the default) or Dark colors for the app's windows.
         public static bool DarkMode { get { return Get("DarkMode", false); } set { Set("DarkMode", value); } }
         public static string TeamsStatusMessage

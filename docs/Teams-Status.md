@@ -40,9 +40,9 @@ While you're connected, when another app uses your microphone (a Cytracom phone 
 
 ## Teams matches what you pick
 
-While you're connected, picking **Busy** or **On a call** (in the window, the tray menu or with Alt+R) also sets your Teams status to **Busy**, and picking **Open** (Alt+G) sets it to **Available**, just as if you'd picked them in Teams. Open sets Available even if a meeting on your calendar would otherwise show you as Busy, but not while the app sees you on a call. Going back to **Follow Teams**, or Off or Test lights, puts Teams back to automatic. So does the [override timer](Using-the-Light.md#override-timer) running out.
+While you're connected, picking **Busy** or **On a call** (in the window, the tray menu or with Alt+R) also sets your Teams status to **Busy**, and picking **Available** (Alt+G) sets it to **Available**, just as if you'd picked them in Teams. Available wins even if a meeting on your calendar would otherwise show you as Busy, but not while the app sees you on a call. Going back to **Follow Teams Status**, or Off or Test lights, puts Teams back to automatic. So does the [override timer](Using-the-Light.md#override-timer) running out.
 
-- On by default. Turn it off with **Match my Teams status when I pick Busy, Open or On a call** in [Settings](Using-the-Light.md#settings).
+- On by default. Turn it off with **Match my Teams status when I pick Busy, Available or On a call** in [Settings](Using-the-Light.md#settings).
 - If the app or PC stops, Teams goes back to automatic on its own within an hour. The app renews the status every 30 minutes while you stay on it.
 - If you'd picked a status in Teams yourself (say, Do not disturb), it's reset to automatic afterwards.
 

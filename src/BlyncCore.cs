@@ -30,8 +30,8 @@ namespace Krabbz.Blynclight
         {
             switch (state)
             {
-                case Red: return "Red";
-                case Green: return "Green";
+                case Red: return "Busy";
+                case Green: return "Available";
                 case Party: return "Test lights";
                 case Off: return "Off";
                 case FollowTeams: return "Following Teams status";

@@ -135,10 +135,10 @@ namespace Krabbz.Blynclight
             var menu = new ContextMenuStrip();
             menu.Items.Add("Open " + Program.AppName, null, delegate { ShowWindow(); }).Font = new Font(menu.Font, FontStyle.Bold);
             menu.Items.Add(new ToolStripSeparator());
-            AddStateItem(menu, "Red (Busy Mode) [Override Color]", LightState.Red);
-            AddStateItem(menu, "Green (Open Mode) [Override Color]", LightState.Green);
-            AddStateItem(menu, "On A Call (flashing red/blue)", LightState.CallFlash);
-            AddStateItem(menu, "Test Lights (Cycling Colors)", LightState.Party);
+            AddStateItem(menu, "Busy (red)", LightState.Red);
+            AddStateItem(menu, "Available (green)", LightState.Green);
+            AddStateItem(menu, "On a call (flashing red/blue)", LightState.CallFlash);
+            AddStateItem(menu, "Test lights (cycling colors)", LightState.Party);
             AddStateItem(menu, "Off", LightState.Off);
             AddStateItem(menu, "Follow Teams Status", LightState.FollowTeams);
             menu.Items.Add(new ToolStripSeparator());
