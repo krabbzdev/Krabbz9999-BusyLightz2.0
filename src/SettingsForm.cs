@@ -86,6 +86,26 @@ namespace Krabbz.Blynclight
             message.Enabled = messageOn.Checked;
             y += 16;
 
+            // Small and yellow, on its own line above the bottom buttons.
+            var yellow = Color.FromArgb(255, 221, 0);
+            var coffee = new Button
+            {
+                Text = "☕  Buy me a coffee",
+                Tag = Theme.KeepColors,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = yellow,
+                ForeColor = Color.FromArgb(24, 24, 28),
+                Font = Theme.Tiny,
+                Cursor = Cursors.Hand,
+            };
+            coffee.FlatAppearance.BorderSize = 0;
+            coffee.FlatAppearance.MouseOverBackColor = Theme.Mix(yellow, Color.Black, 0.08);
+            coffee.Size = new Size(TextRenderer.MeasureText(coffee.Text, coffee.Font).Width + 8, 20);
+            coffee.Location = new Point(width - 20 - coffee.Width, y);
+            coffee.Click += delegate { tray.OpenCoffee(); };
+            Controls.Add(coffee);
+            y += 32;
+
             var setup = new Button { Text = "Setup checklist...", Bounds = new Rectangle(20, y, 150, 34) };
             setup.Click += delegate { tray.ShowSetup(); };
             var help = new Button { Text = "Help", Bounds = new Rectangle(180, y, 90, 34) };

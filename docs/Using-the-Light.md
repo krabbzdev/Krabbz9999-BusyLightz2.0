@@ -41,7 +41,6 @@ Every style has the same parts:
 | **Off** (bottom left) | Turns the light off. |
 | **⚙ Settings** (top right) | Opens [Settings](#settings). |
 | **Version line** | Shows the version and build date, plus **Check for updates**, **Project page** and **Help** (this guide) links. |
-| **☕ Buy me a coffee** (bottom right) | Opens [KrabbzDev's Buy Me a Coffee page](https://buymeacoffee.com/krabbzdev), if you'd like to say thanks. Also in the tray menu. |
 
 The mode you picked is filled in with its color. The mode you pick is remembered, even after a restart, and is put back if you unplug and replug the light.
 
@@ -117,6 +116,7 @@ Open with the **⚙ Settings** button in the window or **Settings...** in the tr
 | **Match my Teams status when I pick Busy, Available or On a call** | See [Teams Status](Teams-Status.md#teams-matches-what-you-pick). |
 | **Set my Teams status message while my lights are red** | On by default, showing *On a video call*. Pick another message, or **Custom message...** to type your own. See [Teams Status](Teams-Status.md#status-message-while-your-lights-are-red). |
 | **Setup checklist...** | Opens the [Setup Checklist](Setup-Checklist.md). |
+| **☕ Buy me a coffee** (bottom right) | Opens [KrabbzDev's Buy Me a Coffee page](https://buymeacoffee.com/krabbzdev), if you'd like to say thanks. Also in the tray menu. |
 
 ## Colors at a glance
 
