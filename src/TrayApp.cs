@@ -205,8 +205,40 @@ namespace Krabbz.Blynclight
                 ShowSetup();
                 try { File.WriteAllText(SetupShownPath, Program.VersionText); } catch (IOException) { }
             }
-            if (justUpdated)
-                tray.ShowBalloonTip(5000, Program.AppName, "Updated to version " + Program.VersionText + ".", ToolTipIcon.Info);
+            string lastVersion = AppSettings.LastVersion;
+            try { AppSettings.LastVersion = Program.VersionText; } catch (Exception) { }
+            if (justUpdated || (lastVersion != null && lastVersion != Program.VersionText)) ShowWhatsNew();
+        }
+
+        // Clicking the "what changed" card opens this release page; other cards open nothing.
+        string balloonLink;
+
+        // Shows an "Updated to version x" card listing what changed, from the release notes on GitHub.
+        void ShowWhatsNew()
+        {
+            tray.BalloonTipClicked += delegate { if (balloonLink != null) System.Diagnostics.Process.Start(balloonLink); };
+            tray.BalloonTipClosed += delegate { balloonLink = null; };
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                string repo = Program.UpdateRepo;
+                string notes = repo == null ? null : Updater.ReleaseNotes(repo, Program.VersionText);
+                // Windows cuts notification text off at about 200 characters.
+                const int MaxLength = 200;
+                string more = repo == null ? "" : "\nClick to see the full release notes.";
+                string text = notes ?? "Click to see what changed.";
+                if (notes != null && text.Length + more.Length > MaxLength)
+                    text = text.Substring(0, MaxLength - more.Length - 3).TrimEnd() + "...";
+                if (notes != null) text += more;
+                try
+                {
+                    messages.BeginInvoke((Action)delegate
+                    {
+                        balloonLink = repo == null ? null : Updater.ReleasePage(repo, Program.VersionText);
+                        tray.ShowBalloonTip(15000, "Updated to version " + Program.VersionText, repo == null ? "You're on the newest version." : text, ToolTipIcon.Info);
+                    });
+                }
+                catch (InvalidOperationException) { } // Window already gone during exit.
+            });
         }
 
         static string SetupShownPath
@@ -629,14 +661,20 @@ namespace Krabbz.Blynclight
         }
 
         // While the lights are red by the user's choice or because of a call, shows their chosen Teams status message.
-        // Picking Busy or On a call also shows them as Busy in Teams.
+        // Picking Busy or On a call also shows them as Busy in Teams, and Open as Available (except during a call).
         void UpdateTeamsMessage()
         {
             if (presence == null) return;
             bool picked = light.State == LightState.Red || light.State == LightState.CallFlash;
             bool red = picked || callApp != null;
             presence.ShowStatusMessage(red && AppSettings.TeamsStatusMessageOn ? AppSettings.TeamsStatusMessage : null);
-            presence.ShowBusy(picked && AppSettings.TeamsBusyWhenPicked);
+            string status = null;
+            if (AppSettings.TeamsBusyWhenPicked)
+            {
+                if (picked) status = "Busy";
+                else if (light.State == LightState.Green && callApp == null) status = "Available";
+            }
+            presence.ShowPresence(status);
         }
 
         public string StatusText

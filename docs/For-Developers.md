@@ -20,12 +20,15 @@ The MSI goes to `dist\`. **Use a new version number for every build you install 
 | `-UpdateRepo` | `krabbzdev/KrabbzDev-BusyLightz2.0` | GitHub repo the app checks for updates; empty disables updates |
 | `-GraphClientId`, `-GraphTenantId` | ShowTech's registration | Built-in Teams app registration; pass empty strings to build without one |
 | `-Publish` | off | Also publish the MSI as GitHub release `v<Version>` |
+| `-Notes` | none | Release notes as Markdown list items; the app shows them in its *Updated to version x* card |
 
 ## Publish a release
 
 ```powershell
-.\build.ps1 -Version 2.8.1 -Publish
+.\build.ps1 -Version 2.8.1 -Publish -Notes "- Fixed this`n- Added that"
 ```
+
+Write the notes for people using the app: the update card shows about the first 200 characters, and clicking it opens the release page.
 
 This creates release `v2.8.1` with the installer attached as `KrabbzDev-BusyLightz2.0.msi`, a fixed name so the README's *latest/download* link always works. A second copy named `Krabbz9999-Blynclight-App-Control.msi` keeps links from before the rename working.
 

@@ -6,6 +6,7 @@
 .EXAMPLE
   .\build.ps1 -Version 2.0.3            # build only
   .\build.ps1 -Version 2.0.3 -Publish   # build, then publish as GitHub release v2.0.3 (installed apps auto-update to it)
+  .\build.ps1 -Version 2.0.3 -Publish -Notes "- Fixed X`n- Added Y"   # with release notes, shown in the app after updating
 #>
 param(
     [Parameter(Mandatory = $true)]
@@ -17,7 +18,10 @@ param(
     [string]$GraphClientId = '0213fb00-29af-4f12-a2f9-8b90447266d3',
     [string]$GraphTenantId = 'e32df814-cde8-4e0e-b51a-f6043d246ca5',
     # Publish the MSI as a GitHub release (needs GitHub CLI, signed in).
-    [switch]$Publish
+    [switch]$Publish,
+    # What changed, as Markdown list items (e.g. "- Open sets Teams to Available"). Becomes the release notes,
+    # which the app shows in its "Updated to version x" card after updating.
+    [string]$Notes
 )
 
 $ErrorActionPreference = 'Stop'
@@ -122,5 +126,5 @@ if ($Publish) {
     }
     Write-Host "Publishing release v$Version to $UpdateRepo..."
     Invoke-Tool $gh (@('release', 'create', "v$Version") + $releaseMsis + @('--repo', $UpdateRepo,
-        '--title', "Version $Version", '--notes', "KrabbzDev-BusyLightz2.0 $Version"))
+        '--title', "Version $Version", '--notes', $(if ($Notes) { $Notes } else { "KrabbzDev-BusyLightz2.0 $Version" })))
 }

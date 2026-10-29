@@ -57,9 +57,9 @@ namespace Krabbz.Blynclight
         // The user's own status message from before ours, put back afterwards.
         Dictionary<string, object> previousMessage;
         readonly Timer busyTimer;
-        // Whether Teams should show Busy because the user picked Busy or On a call, and whether this app set it.
-        bool wantBusy;
-        bool shownBusy;
+        // The Teams status the user picked here ("Busy", "Available", or null for automatic), and the one this app set.
+        string wantedPresence;
+        string shownPresence;
 
         // reportProblem is called on a background thread with a message the user should see.
         public TeamsPresence(string clientId, string tenantId, Action<string> reportProblem)
@@ -70,7 +70,7 @@ namespace Krabbz.Blynclight
             Load();
             renewTimer = new Timer(delegate { Renew(); }, null, Timeout.Infinite, Timeout.Infinite);
             messageTimer = new Timer(delegate { UpdateStatusMessage(); }, null, Timeout.Infinite, Timeout.Infinite);
-            busyTimer = new Timer(delegate { UpdateBusy(); }, null, Timeout.Infinite, Timeout.Infinite);
+            busyTimer = new Timer(delegate { UpdatePresence(); }, null, Timeout.Infinite, Timeout.Infinite);
         }
 
         public bool SignedIn { get { lock (sync) return refreshToken != null; } }
@@ -146,7 +146,7 @@ namespace Krabbz.Blynclight
             renewTimer.Change(Timeout.Infinite, Timeout.Infinite);
             if (wasOnCall) TryClear();
             TakeDownStatusMessage();
-            TakeDownBusy();
+            TakeDownPresence();
             lock (sync) { refreshToken = null; accessToken = null; userId = null; account = null; }
             try { File.Delete(tokenPath); } catch (IOException) { }
         }
@@ -278,70 +278,74 @@ namespace Krabbz.Blynclight
             previousMessage = null;
             if (previous != null && Expired(previous)) previous = null;
             var current = CurrentStatusMessage();
-            if (current != null && ContentOf(current) != shown) return;
+            if (current != null && !string.Equals(ContentOf(current), shown.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                Log("Left the Teams status message alone, since it was changed in Teams: " + ContentOf(current));
+                return;
+            }
             PostStatusMessage(previous ?? new Dictionary<string, object>
             {
                 { "message", new Dictionary<string, object> { { "content", "" }, { "contentType", "text" } } },
             });
         }
 
-        // Shows the user as Busy in Teams, as if they had picked Busy there, or puts Teams back to automatic.
-        // Runs in the background. The Busy expires on its own after an hour, renewed while still wanted.
-        public void ShowBusy(bool busy)
+        // Sets the user's Teams status as if they had picked it there ("Busy" or "Available"), or null to put Teams
+        // back to automatic. Runs in the background. It expires on its own after an hour, renewed while still wanted.
+        public void ShowPresence(string availability)
         {
             lock (sync)
             {
-                if (busy == wantBusy) return;
-                wantBusy = busy;
+                if (availability == wantedPresence) return;
+                wantedPresence = availability;
             }
-            busyTimer.Change(0, busy ? MessageRenewMs : Timeout.Infinite);
+            busyTimer.Change(0, availability != null ? MessageRenewMs : Timeout.Infinite);
         }
 
-        void UpdateBusy()
+        void UpdatePresence()
         {
             lock (graphGate)
             {
-                bool want, shown;
+                string want, shown;
                 lock (sync)
                 {
                     if (refreshToken == null) return;
-                    want = wantBusy;
-                    shown = shownBusy;
+                    want = wantedPresence;
+                    shown = shownPresence;
                 }
                 try
                 {
-                    if (want)
+                    if (want != null)
                     {
                         PostPresence("setUserPreferredPresence", new Dictionary<string, object>
                         {
-                            { "availability", "Busy" },
-                            { "activity", "Busy" },
+                            { "availability", want },
+                            { "activity", want },
                             { "expirationDuration", "PT" + MessageExpiryMinutes + "M" },
                         });
-                        lock (sync) shownBusy = true;
+                        lock (sync) shownPresence = want;
                     }
-                    else if (shown)
+                    else if (shown != null)
                     {
-                        lock (sync) shownBusy = false;
+                        lock (sync) shownPresence = null;
                         PostPresence("clearUserPreferredPresence", new Dictionary<string, object>());
                     }
                     problemReported = false;
                 }
-                catch (Exception ex) { Report("Couldn't set your Teams status to Busy: " + ex.Message); }
+                catch (Exception ex) { Report("Couldn't set your Teams status to " + (want ?? "automatic") + ": " + ex.Message); }
             }
         }
 
-        // Puts Teams back to automatic now, if this app set Busy. Used when signing out or exiting.
-        void TakeDownBusy()
+        // Puts Teams back to automatic now, if this app set a status. Used when signing out or exiting.
+        void TakeDownPresence()
         {
-            bool shown;
-            lock (sync) { wantBusy = false; shown = shownBusy; shownBusy = false; }
+            string shown;
+            lock (sync) { wantedPresence = null; shown = shownPresence; shownPresence = null; }
             busyTimer.Change(Timeout.Infinite, Timeout.Infinite);
-            if (!shown) return;
+            if (shown == null) return;
             lock (graphGate)
             {
                 try { PostPresence("clearUserPreferredPresence", new Dictionary<string, object>()); }
-                catch (Exception ex) { Report("Couldn't take Teams off Busy (it goes back on its own within an hour): " + ex.Message); }
+                catch (Exception ex) { Report("Couldn't put your Teams status back to automatic (it goes back on its own within an hour): " + ex.Message); }
             }
         }
 
@@ -369,11 +373,15 @@ namespace Krabbz.Blynclight
                 && at <= DateTime.UtcNow;
         }
 
+        // The message as plain text. Teams can hand back what this app set as HTML (e.g. "<p>In a meeting</p>"),
+        // so tags and entities are stripped before comparing.
         static string ContentOf(Dictionary<string, object> status)
         {
             object message, content;
             var inner = status.TryGetValue("message", out message) ? message as Dictionary<string, object> : null;
-            return inner != null && inner.TryGetValue("content", out content) ? ((content as string) ?? "").Trim() : null;
+            if (inner == null || !inner.TryGetValue("content", out content)) return null;
+            string text = System.Text.RegularExpressions.Regex.Replace((content as string) ?? "", "<[^>]*>", "");
+            return HttpUtility.HtmlDecode(text).Replace(' ', ' ').Trim();
         }
 
         void PostStatusMessage(Dictionary<string, object> statusMessage)
@@ -387,8 +395,10 @@ namespace Krabbz.Blynclight
         }
 
         // Shows one message per run of failures, so a dropped network doesn't pop up a balloon every renewal.
+        // Every failure goes to app.log, so a missed balloon can still be looked up.
         void Report(string message)
         {
+            Log(message);
             if (problemReported) return;
             problemReported = true;
             reportProblem(message);
@@ -446,10 +456,10 @@ namespace Krabbz.Blynclight
         {
             try
             {
-                // Take off a Busy this app set first, or it would be read back as the user's own status.
+                // Take off a status this app set first, or it would be read back as the user's own.
                 bool pendingClear;
-                lock (sync) pendingClear = shownBusy && !wantBusy;
-                if (pendingClear) UpdateBusy();
+                lock (sync) pendingClear = shownPresence != null && wantedPresence == null;
+                if (pendingClear) UpdatePresence();
                 var result = ReadPresence();
                 problemReported = false;
                 return result["availability"] as string;
@@ -636,7 +646,7 @@ namespace Krabbz.Blynclight
             lock (sync) { wasOnCall = onCall; onCall = false; }
             if (wasOnCall) TryClear();
             TakeDownStatusMessage();
-            TakeDownBusy();
+            TakeDownPresence();
             messageTimer.Dispose();
             busyTimer.Dispose();
         }

@@ -76,6 +76,33 @@ namespace Krabbz.Blynclight
             Process.Start(helper);
         }
 
+        // The GitHub release notes for a version as plain text, one change per line, or null when there are none
+        // (or GitHub can't be reached). Markdown headings and bold are dropped and list items get bullets.
+        public static string ReleaseNotes(string repo, string version)
+        {
+            try
+            {
+                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+                var release = (Dictionary<string, object>)new JavaScriptSerializer()
+                    .DeserializeObject(Get("https://api.github.com/repos/" + repo + "/releases/tags/v" + version));
+                var lines = new List<string>();
+                foreach (string raw in ((release["body"] as string) ?? "").Split('\n'))
+                {
+                    string line = raw.Trim().Replace("**", "");
+                    if (line.Length == 0 || line.StartsWith("#") || line == "KrabbzDev-BusyLightz2.0 " + version) continue;
+                    if (line.StartsWith("- ") || line.StartsWith("* ")) line = "• " + line.Substring(2);
+                    lines.Add(line);
+                }
+                return lines.Count > 0 ? string.Join("\n", lines.ToArray()) : null;
+            }
+            catch (Exception) { return null; }
+        }
+
+        public static string ReleasePage(string repo, string version)
+        {
+            return "https://github.com/" + repo + "/releases/tag/v" + version;
+        }
+
         static string Get(string url)
         {
             using (var web = NewClient())

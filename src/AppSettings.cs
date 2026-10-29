@@ -74,6 +74,21 @@ namespace Krabbz.Blynclight
             }
         }
 
+        // The version that last ran, so an update (automatic or a manual install) can say what changed. Null before the first run.
+        public static string LastVersion
+        {
+            get
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(SettingsKey))
+                    return key == null ? null : key.GetValue("LastVersion") as string;
+            }
+            set
+            {
+                using (var key = Registry.CurrentUser.CreateSubKey(SettingsKey))
+                    key.SetValue("LastVersion", value, RegistryValueKind.String);
+            }
+        }
+
         static bool Get(string name, bool defaultValue = true)
         {
             using (var key = Registry.CurrentUser.OpenSubKey(SettingsKey))

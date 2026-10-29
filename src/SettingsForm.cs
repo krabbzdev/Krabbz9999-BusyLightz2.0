@@ -76,7 +76,7 @@ namespace Krabbz.Blynclight
             orgApp.Click += delegate { ShowTeamsAppDialog(); };
             Controls.Add(orgApp);
             y += 44;
-            Box("Show me as Busy in Teams when I pick Busy or On a call", AppSettings.TeamsBusyWhenPicked,
+            Box("Match my Teams status when I pick Busy, Open or On a call", AppSettings.TeamsBusyWhenPicked,
                 v => { AppSettings.TeamsBusyWhenPicked = v; tray.ApplySettings(); });
             var messageOn = Box("Set my Teams status message while my lights are red:",
                 AppSettings.TeamsStatusMessageOn, v => { AppSettings.TeamsStatusMessageOn = v; tray.ApplySettings(); });

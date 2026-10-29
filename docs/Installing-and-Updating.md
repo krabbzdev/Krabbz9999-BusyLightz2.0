@@ -24,7 +24,9 @@ The app keeps itself up to date:
   1. downloads it from this project's [Releases](https://github.com/krabbzdev/KrabbzDev-BusyLightz2.0/releases) page,
   2. checks the download against GitHub's SHA-256 fingerprint and refuses anything that doesn't match,
   3. installs it silently in the background (no installer window, no admin prompt),
-  4. reopens itself and shows *"Updated to version x"*.
+  4. reopens itself and shows an *"Updated to version x"* card listing what changed. Click it for the full release notes.
+
+The same card shows after you install a newer version by hand.
 
 The version you're running is shown at the bottom of the window and in the tray menu.
 
