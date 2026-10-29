@@ -401,6 +401,8 @@ namespace Krabbz.Blynclight
         {
             light.Set(state);
             StartOverrideTimerIfNeeded();
+            // Before reading Teams status back, so a Busy this app set isn't mistaken for the user's own.
+            UpdateTeamsMessage();
             if (state == LightState.FollowTeams) HandBackToTeams();
             Refresh();
         }
@@ -627,11 +629,14 @@ namespace Krabbz.Blynclight
         }
 
         // While the lights are red by the user's choice or because of a call, shows their chosen Teams status message.
+        // Picking Busy or On a call also shows them as Busy in Teams.
         void UpdateTeamsMessage()
         {
             if (presence == null) return;
-            bool red = callApp != null || light.State == LightState.Red || light.State == LightState.CallFlash;
+            bool picked = light.State == LightState.Red || light.State == LightState.CallFlash;
+            bool red = picked || callApp != null;
             presence.ShowStatusMessage(red && AppSettings.TeamsStatusMessageOn ? AppSettings.TeamsStatusMessage : null);
+            presence.ShowBusy(picked && AppSettings.TeamsBusyWhenPicked);
         }
 
         public string StatusText

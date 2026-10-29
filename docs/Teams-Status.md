@@ -38,6 +38,14 @@ While you're connected, when another app uses your microphone (a Cytracom phone 
 - If the app or PC stops mid-call, Microsoft drops the Busy status on its own within 5 minutes.
 - Apps on your [ignore list](Call-Detection.md#ignoring-apps) don't set Busy.
 
+## Busy in Teams when you pick Busy or On a call
+
+While you're connected, picking **Busy** or **On a call** (in the window, the tray menu or with Alt+R) also sets your Teams status to **Busy**, just as if you'd picked Busy in Teams. Going back to **Follow Teams**, or Open, Off or Test lights, puts Teams back to automatic. So does the [override timer](Using-the-Light.md#override-timer) running out.
+
+- On by default. Turn it off with **Show me as Busy in Teams when I pick Busy or On a call** in [Settings](Using-the-Light.md#settings).
+- If the app or PC stops, Teams goes back to automatic on its own within an hour. The app renews Busy every 30 minutes while you stay on it.
+- If you'd picked a status in Teams yourself (say, Do not disturb), it's reset to automatic afterwards.
+
 ## Status message while your lights are red
 
 Turn on **Set my Teams status message while my lights are red** in [Settings](Using-the-Light.md#settings) and pick a message. Coworkers then see it next to your name in Teams whenever your lights are red: when you pick **Busy** or **On a call**, or when the app [detects a call](Call-Detection.md). It's off by default.

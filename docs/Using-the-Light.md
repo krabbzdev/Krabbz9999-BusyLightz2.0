@@ -100,6 +100,7 @@ Open with the **⚙ Settings** button in the window or **Settings...** in the tr
 | **Flash red and blue instead of steady red** | On by default: lights flash red and blue quickly during calls. Untick for steady red. |
 | **Show me as Busy in Teams during calls in other apps** | See [Teams Status](Teams-Status.md#busy-in-teams-during-other-calls). |
 | **Microsoft Teams** | Shows who you're connected as, with **Connect** / **Disconnect**, and **Organization's Teams app...** for [organization setup](Setting-Up-Teams-for-Your-Organization.md). |
+| **Show me as Busy in Teams when I pick Busy or On a call** | See [Teams Status](Teams-Status.md#busy-in-teams-when-you-pick-busy-or-on-a-call). |
 | **Set my Teams status message while my lights are red** | Off by default. Pick a message, or **Custom message...** to type your own. See [Teams Status](Teams-Status.md#status-message-while-your-lights-are-red). |
 | **Setup checklist...** | Opens the [Setup Checklist](Setup-Checklist.md). |
 

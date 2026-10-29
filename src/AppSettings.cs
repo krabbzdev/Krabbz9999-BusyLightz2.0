@@ -37,6 +37,7 @@ namespace Krabbz.Blynclight
         }
         public static bool FlashOnCalls { get { return Get("FlashOnCalls"); } set { Set("FlashOnCalls", value); } }
         public static bool TeamsBusyOnCalls { get { return Get("TeamsBusyOnCalls"); } set { Set("TeamsBusyOnCalls", value); } }
+        public static bool TeamsBusyWhenPicked { get { return Get("TeamsBusyWhenPicked"); } set { Set("TeamsBusyWhenPicked", value); } }
         public static bool StartWithWindows { get { return Get("StartWithWindows"); } set { Set("StartWithWindows", value); ApplyStartup(); } }
         public static bool OpenWindowAtSignIn { get { return Get("OpenWindowAtSignIn"); } set { Set("OpenWindowAtSignIn", value); ApplyStartup(); } }
 
