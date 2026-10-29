@@ -69,8 +69,8 @@ These work from any app, as long as the tray app is running:
 
 | Keys | Action |
 | --- | --- |
-| **Alt+R** | Red (Busy Mode) |
-| **Alt+G** | Green (Open Mode) |
+| **Alt+R** | Busy (red) |
+| **Alt+G** | Open (green) |
 
 Hotkeys take that key combination away from other programs; for example, Outlook uses Alt+R for Reply. If another program already owns one of them, the app tells you when it starts and that hotkey won't work.
 

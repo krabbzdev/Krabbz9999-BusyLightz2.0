@@ -12,12 +12,16 @@ A small Windows app that controls USB busy lights, so the people around you can 
 >
 > — KrabbzDev
 
+<img src="images/main-window.png" alt="The main window: a red status dot reading Red with an Override on badge, a countdown back to Teams status, and Busy, Open, On a call and Follow Teams buttons" width="400">
+
 ## What it does
 
-- **Shows your status on the light:** pick Red (Busy) or Green (Open) yourself, or let the light follow your Microsoft Teams status.
-- **Flashes whenever you're on a call:** any app using your microphone (Teams, Zoom, Cytracom, a browser call and so on) makes the light flash red and blue (or steady red, if you prefer), then it goes back when you hang up.
-- **Tells Teams you're busy:** during calls in other apps, such as a Cytracom phone call, Teams shows you as *Busy, In a call*.
-- **Test Lights:** cycles through every color the light can show, to check every light is working.
+- **Shows your status on the light:** pick **Busy** (red), **Open** (green) or **On a call** (flashing red and blue) yourself, or let the light **Follow Teams**. See [Using the Light](Using-the-Light.md).
+- **Goes back to Teams on its own:** Busy, Open and On a call switch back to Follow Teams after 15 minutes, with an **Override on** badge and countdown so you know one is on. Change the time, or turn it off, in Settings. See [Override timer](Using-the-Light.md#override-timer).
+- **Flashes whenever you're on a call:** any app using your microphone (Teams, Zoom, Cytracom, a browser call and so on) makes the light flash red and blue (or steady red, if you prefer), then it goes back when you hang up. See [Call Detection](Call-Detection.md).
+- **Tells Teams you're busy:** picking Busy or On a call sets your Teams status to Busy, and during calls in other apps, such as a Cytracom phone call, Teams shows you as *Busy, In a call*. See [Teams Status](Teams-Status.md).
+- **Sets a Teams status message:** if you turn it on, coworkers see a message like *On a video call* or *In a meeting*, or your own, next to your name while your lights are red. See [Status message](Teams-Status.md#status-message-while-your-lights-are-red).
+- **Test lights:** cycles through every color the light can show, to check every light is working.
 - **Works with several lights at once:** every Blynclight and Luxafor Flag on the PC shows the same color, including ones plugged in later.
 - **Keeps itself up to date:** new versions install silently in the background.
 
@@ -36,8 +40,8 @@ A small Windows app that controls USB busy lights, so the people around you can 
 | Page | What's in it |
 | --- | --- |
 | [Installing and Updating](Installing-and-Updating.md) | Download, install, automatic updates, uninstall, deploying to many PCs |
-| [Using the Light](Using-the-Light.md) | The window, every button and menu item, hotkeys, notifications |
-| [Teams Status](Teams-Status.md) | Connecting to Teams, what each color means, Busy during calls |
+| [Using the Light](Using-the-Light.md) | The window, every button and menu item, override timer, hotkeys, notifications, Settings |
+| [Teams Status](Teams-Status.md) | Connecting to Teams, what each color means, Busy in Teams, status messages |
 | [Call Detection](Call-Detection.md) | How the light knows you're on a call, ignoring apps |
 | [Setup Checklist](Setup-Checklist.md) | Every step of the checklist explained |
 | [Setting Up Teams for Your Organization](Setting-Up-Teams-for-Your-Organization.md) | One-time steps for an IT admin |
