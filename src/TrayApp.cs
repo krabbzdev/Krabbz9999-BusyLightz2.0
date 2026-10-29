@@ -343,6 +343,31 @@ namespace Krabbz.Blynclight
             if (AppSettings.HotkeysEnabled) RegisterHotkeys();
         }
 
+        // Reopens the main and Settings windows in the current Light/Dark colors, where they were. Runs after the
+        // caller's event finishes, since that's usually a control in the Settings window being replaced.
+        public void ApplyTheme()
+        {
+            messages.BeginInvoke((Action)delegate
+            {
+                if (form != null && !form.IsDisposed)
+                {
+                    bool shown = form.Visible;
+                    var at = form.Location;
+                    form.Dispose();
+                    form = new ControlForm(this) { StartPosition = FormStartPosition.Manual, Location = at };
+                    if (shown) form.Show();
+                }
+                if (settingsForm != null && !settingsForm.IsDisposed)
+                {
+                    var at = settingsForm.Location;
+                    settingsForm.Close(); // Also stops its refresh timer.
+                    settingsForm = new SettingsForm(this) { StartPosition = FormStartPosition.Manual, Location = at };
+                    settingsForm.Show();
+                    settingsForm.Activate();
+                }
+            });
+        }
+
         public void ShowSettings()
         {
             if (settingsForm == null || settingsForm.IsDisposed) settingsForm = new SettingsForm(this);

@@ -5,24 +5,26 @@ using System.Windows.Forms;
 
 namespace Krabbz.Blynclight
 {
-    // Colors and drawing helpers shared by the main window's controls.
+    // Colors and drawing helpers shared by the app's windows. The neutral colors follow the Light/Dark setting;
+    // the mode colors are the same in both.
     static class Theme
     {
-        public static readonly Color Page = Color.FromArgb(247, 247, 249);
-        public static readonly Color Card = Color.White;
-        public static readonly Color Border = Color.FromArgb(228, 228, 233);
-        public static readonly Color BorderHover = Color.FromArgb(190, 190, 200);
-        public static readonly Color Text = Color.FromArgb(27, 27, 31);
-        public static readonly Color Muted = Color.FromArgb(107, 107, 118);
+        static bool Dark { get { return AppSettings.DarkMode; } }
+        public static Color Page { get { return Dark ? Color.FromArgb(32, 32, 36) : Color.FromArgb(247, 247, 249); } }
+        public static Color Card { get { return Dark ? Color.FromArgb(44, 44, 50) : Color.White; } }
+        public static Color Border { get { return Dark ? Color.FromArgb(64, 64, 72) : Color.FromArgb(228, 228, 233); } }
+        public static Color BorderHover { get { return Dark ? Color.FromArgb(100, 100, 112) : Color.FromArgb(190, 190, 200); } }
+        public static Color Text { get { return Dark ? Color.FromArgb(240, 240, 243) : Color.FromArgb(27, 27, 31); } }
+        public static Color Muted { get { return Dark ? Color.FromArgb(160, 160, 172) : Color.FromArgb(107, 107, 118); } }
         public static readonly Color Red = Color.FromArgb(209, 52, 56);
         public static readonly Color Green = Color.FromArgb(16, 124, 16);
         public static readonly Color CallRed = Color.FromArgb(164, 38, 44);
         public static readonly Color CallBlue = Color.FromArgb(0, 120, 212);
         public static readonly Color Teams = Color.FromArgb(91, 95, 199);
-        public static readonly Color TeamsTint = Color.FromArgb(238, 240, 251);
-        public static readonly Color TeamsText = Color.FromArgb(59, 63, 143);
-        public static readonly Color OverrideTint = Color.FromArgb(255, 244, 206);
-        public static readonly Color OverrideText = Color.FromArgb(122, 90, 0);
+        public static Color TeamsTint { get { return Dark ? Color.FromArgb(46, 48, 84) : Color.FromArgb(238, 240, 251); } }
+        public static Color TeamsText { get { return Dark ? Color.FromArgb(184, 188, 246) : Color.FromArgb(59, 63, 143); } }
+        public static Color OverrideTint { get { return Dark ? Color.FromArgb(78, 64, 18) : Color.FromArgb(255, 244, 206); } }
+        public static Color OverrideText { get { return Dark ? Color.FromArgb(250, 214, 120) : Color.FromArgb(122, 90, 0); } }
         public static readonly Font Body = new Font("Segoe UI", 9.5f);
         public static readonly Font Small = new Font("Segoe UI", 8.5f);
         public static readonly Font Strong = new Font("Segoe UI Semibold", 10.5f);
@@ -47,6 +49,53 @@ namespace Krabbz.Blynclight
                 (int)(color.R + (255 - color.R) * amount),
                 (int)(color.G + (255 - color.G) * amount),
                 (int)(color.B + (255 - color.B) * amount));
+        }
+
+        // color faded into the card behind it; amount 0 is the color, 1 is the card. Used for halos and hovers.
+        public static Color Wash(Color color, double amount)
+        {
+            var card = Card;
+            return Color.FromArgb(
+                (int)(color.R + (card.R - color.R) * amount),
+                (int)(color.G + (card.G - color.G) * amount),
+                (int)(color.B + (card.B - color.B) * amount));
+        }
+
+        [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+        static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+        const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+
+        // Colors a window with the standard controls (Settings and the like) to match, title bar included. In Light
+        // mode they keep the standard Windows look. Call it once the window is built; switching modes reopens it.
+        public static void Apply(Form form)
+        {
+            if (Dark) Style(form);
+            TitleBar(form);
+        }
+
+        // A dark title bar in Dark mode (Windows 10 2004 and later).
+        public static void TitleBar(Form form)
+        {
+            int dark = Dark ? 1 : 0;
+            try { DwmSetWindowAttribute(form.Handle, DWMWA_USE_IMMERSIVE_DARK_MODE, ref dark, sizeof(int)); }
+            catch (Exception) { } // Older Windows: the title bar just stays light.
+        }
+
+        static void Style(Control control)
+        {
+            control.ForeColor = Text;
+            if (control is Form || control is Panel || control is CheckBox || control is Label) control.BackColor = Page;
+            var button = control as Button;
+            if (button != null)
+            {
+                button.FlatStyle = FlatStyle.Flat;
+                button.BackColor = Card;
+                button.FlatAppearance.BorderColor = Border;
+                button.FlatAppearance.MouseOverBackColor = Wash(Teams, 0.75);
+            }
+            if (control is ComboBox || control is TextBox || control is ListBox) control.BackColor = Card;
+            if (control is ComboBox) ((ComboBox)control).FlatStyle = FlatStyle.Flat;
+            foreach (Control child in control.Controls) Style(child);
         }
 
         public static GraphicsPath Rounded(Rectangle r, int radius)
@@ -117,7 +166,7 @@ namespace Krabbz.Blynclight
             Theme.FillRounded(g, new Rectangle(0, 0, Width - 1, Height - 1), 10, Theme.Card, Theme.Border);
 
             var dot = Theme.Soften(DotColor);
-            using (var halo = new SolidBrush(Theme.Tint(dot, 0.82)))
+            using (var halo = new SolidBrush(Theme.Wash(dot, 0.82)))
                 g.FillEllipse(halo, 16, 14, 68, 68);
             using (var fill = new SolidBrush(dot))
                 g.FillEllipse(fill, 28, 26, 44, 44);
@@ -205,7 +254,7 @@ namespace Krabbz.Blynclight
             base.OnPaint(e);
             var g = e.Graphics;
             var r = new Rectangle(0, 0, Width - 1, Height - 1);
-            Color fill = active ? accent : hover ? Theme.Tint(accent, 0.94) : Theme.Card;
+            Color fill = active ? accent : hover ? Theme.Wash(accent, 0.9) : Theme.Card;
             Color border = active ? accent : hover ? Theme.BorderHover : Theme.Border;
             Theme.FillRounded(g, r, 8, fill, border);
 
@@ -364,6 +413,14 @@ namespace Krabbz.Blynclight
 
             tray.DisplayChanged += RefreshDisplay;
             RefreshDisplay();
+            HandleCreated += delegate { Theme.TitleBar(this); };
+        }
+
+        // Switching Light/Dark mode replaces the window, so stop listening once it's gone.
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) tray.DisplayChanged -= RefreshDisplay;
+            base.Dispose(disposing);
         }
 
         static string HintFor(string state, string color)

@@ -86,10 +86,11 @@ Test Lights's color changes don't notify. Turn notifications off in [Settings](#
 
 ## Settings
 
-Open with the **⚙ Settings** button in the window or **Settings...** in the tray menu. Changes take effect immediately. Every checkbox is on by default, except the Teams status message.
+Open with the **⚙ Settings** button in the window or **Settings...** in the tray menu. Changes take effect immediately. Every checkbox is on by default.
 
 | Setting | What it does |
 | --- | --- |
+| **Appearance** | **Light** (the default) or **Dark** colors for the window and Settings, title bar included. Changing it reopens them in the new colors. |
 | **Start with Windows** | Starts the app when you sign in. |
 | **Open the window at sign-in** | When off, the app starts quietly in the tray. |
 | **Go back to Follow Teams Status after** | The [override timer](#override-timer) for Red, Green and On A Call. On by default. Pick how long overrides last on the right: 5, 10, 15 (default) or 30 minutes, or 1, 2 or 4 hours. |
@@ -101,7 +102,7 @@ Open with the **⚙ Settings** button in the window or **Settings...** in the tr
 | **Show me as Busy in Teams during calls in other apps** | See [Teams Status](Teams-Status.md#busy-in-teams-during-other-calls). |
 | **Microsoft Teams** | Shows who you're connected as, with **Connect** / **Disconnect**, and **Organization's Teams app...** for [organization setup](Setting-Up-Teams-for-Your-Organization.md). |
 | **Match my Teams status when I pick Busy, Open or On a call** | See [Teams Status](Teams-Status.md#teams-matches-what-you-pick). |
-| **Set my Teams status message while my lights are red** | Off by default. Pick a message, or **Custom message...** to type your own. See [Teams Status](Teams-Status.md#status-message-while-your-lights-are-red). |
+| **Set my Teams status message while my lights are red** | On by default, showing *On a video call*. Pick another message, or **Custom message...** to type your own. See [Teams Status](Teams-Status.md#status-message-while-your-lights-are-red). |
 | **Setup checklist...** | Opens the [Setup Checklist](Setup-Checklist.md). |
 
 ## Colors at a glance

@@ -48,7 +48,7 @@ While you're connected, picking **Busy** or **On a call** (in the window, the tr
 
 ## Status message while your lights are red
 
-Turn on **Set my Teams status message while my lights are red** in [Settings](Using-the-Light.md#settings) and pick a message. Coworkers then see it next to your name in Teams whenever your lights are red: when you pick **Busy** or **On a call**, or when the app [detects a call](Call-Detection.md). It's off by default.
+With **Set my Teams status message while my lights are red** on in [Settings](Using-the-Light.md#settings), coworkers see your chosen message next to your name in Teams whenever your lights are red: when you pick **Busy** or **On a call**, or when the app [detects a call](Call-Detection.md). It's on by default, showing *On a video call*; pick another message there, or untick it to turn it off.
 
 - **Messages:** *On a video call*, *In a meeting*, *On a phone call*, *Heads down, please message me*, *Back in a few minutes*, or **Custom message...** to type your own (up to 280 characters).
 - **When the lights stop being red,** the message is taken away. If you had your own status message before, it's put back.

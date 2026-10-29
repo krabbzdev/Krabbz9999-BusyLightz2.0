@@ -28,6 +28,7 @@ namespace Krabbz.Blynclight
             const int width = 500;
 
             Heading("General");
+            AppearancePicker();
             startWithWindows = Box("Start with Windows", AppSettings.StartWithWindows, v => AppSettings.StartWithWindows = v);
             openWindow = Box("Open the window at sign-in (untick to start in the tray only)", AppSettings.OpenWindowAtSignIn,
                 v => AppSettings.OpenWindowAtSignIn = v, 24);
@@ -97,6 +98,7 @@ namespace Krabbz.Blynclight
             CancelButton = close;
             ClientSize = new Size(width, close.Bottom + 16);
 
+            Load += delegate { Theme.Apply(this); };
             refresh.Tick += delegate { RefreshTeams(); };
             Shown += delegate { RefreshTeams(); refresh.Start(); };
             FormClosed += delegate { refresh.Dispose(); };
@@ -142,6 +144,22 @@ namespace Krabbz.Blynclight
             Controls.Add(box);
             y += 30;
             return box;
+        }
+
+        // Light or Dark colors. A change reopens the app's windows in the new colors.
+        void AppearancePicker()
+        {
+            Controls.Add(new Label { Text = "Appearance", AutoSize = true, Location = new Point(24, y + 3) });
+            var picker = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Bounds = new Rectangle(350, y, 130, 30) };
+            picker.Items.AddRange(new object[] { "Light", "Dark" });
+            picker.SelectedIndex = AppSettings.DarkMode ? 1 : 0;
+            picker.SelectedIndexChanged += delegate
+            {
+                AppSettings.DarkMode = picker.SelectedIndex == 1;
+                tray.ApplyTheme();
+            };
+            Controls.Add(picker);
+            y += 36;
         }
 
         // How long an override lasts, next to its checkbox. A change restarts a running timer with the new length.

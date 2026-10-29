@@ -52,11 +52,13 @@ namespace Krabbz.Blynclight
             }
         }
 
-        // Teams status message shown while the lights are red. Off by default, since it changes what coworkers see.
+        // Teams status message shown while the lights are red.
         public static readonly string[] TeamsStatusMessageChoices =
             { "On a video call", "In a meeting", "On a phone call", "Heads down, please message me", "Back in a few minutes" };
         public const int TeamsStatusMessageMaxLength = 280;
-        public static bool TeamsStatusMessageOn { get { return Get("TeamsStatusMessageOn", false); } set { Set("TeamsStatusMessageOn", value); } }
+        public static bool TeamsStatusMessageOn { get { return Get("TeamsStatusMessageOn"); } set { Set("TeamsStatusMessageOn", value); } }
+        // Light (the default) or Dark colors for the app's windows.
+        public static bool DarkMode { get { return Get("DarkMode", false); } set { Set("DarkMode", value); } }
         public static string TeamsStatusMessage
         {
             get

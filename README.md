@@ -40,12 +40,13 @@ Connect once with a browser sign-in to your work account. No client secret is st
 - **Follow Teams status:** green Available, red Busy or In a call, purple Do not disturb, yellow Away, off when Offline.
 - **Teams matches what you pick:** picking Busy or On a call sets your Teams status to Busy, Open sets it to Available, and going back to Follow Teams returns it to normal.
 - **Busy in Teams during other calls:** during a Zoom, Cytracom or other non-Teams call, Teams shows you as *Busy, In a call*.
-- **Status message while your lights are red:** optionally show *On a video call*, *In a meeting*, *On a phone call*, *Heads down, please message me*, *Back in a few minutes*, or your own message next to your name in Teams. Your earlier message comes back afterwards.
+- **Status message while your lights are red:** shows *On a video call* (the default), *In a meeting*, *On a phone call*, *Heads down, please message me*, *Back in a few minutes*, or your own message next to your name in Teams. Your earlier message comes back afterwards.
 
 ### Setup and updates
 
 - **Setup checklist** on first run, including setting up the Teams app for your organization.
-- **Settings window** (⚙ in the app or tray menu): startup, notifications, hotkeys, override timer, automatic updates, call detection and the Teams options.
+- **Light or Dark mode**, picked in Settings (Light is the default).
+- **Settings window** (⚙ in the app or tray menu): appearance, startup, notifications, hotkeys, override timer, automatic updates, call detection and the Teams options.
 - **Notifications** when the lights change.
 - **Automatic, silent updates** from this repo's Releases, checked against GitHub's SHA-256 digest before installing, with a card afterwards listing what changed.
 - Starts at sign-in and lives in the system tray, with an icon that matches the lights.
