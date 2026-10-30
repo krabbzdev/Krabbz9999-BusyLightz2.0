@@ -50,11 +50,72 @@ namespace Krabbz.Blynclight
                     if (!trayOnly) showSignal.Set();
                     return 0;
                 }
+                // Errors nothing else caught go to app.log. On the UI thread the app logs them and keeps running,
+                // instead of showing .NET's error dialog; on other threads Windows still closes the app.
+                Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+                Application.ThreadException += (sender, e) => LogError("Unexpected error", e.Exception);
+                AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+                    LogError("Unexpected error, the app closed", e.ExceptionObject as Exception);
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new TrayContext(showSignal, !trayOnly, justUpdated));
+                try { Application.Run(new TrayContext(showSignal, !trayOnly, justUpdated)); }
+                catch (Exception ex) { LogError("Unexpected error, the app closed", ex); throw; }
             }
             return 0;
+        }
+
+        // Runs background work and logs anything it throws, instead of letting it close the app.
+        public static void Guard(string what, Action work)
+        {
+            try { work(); }
+            catch (Exception ex) { LogError(what, ex); }
+        }
+
+        // Guard on a thread-pool thread.
+        public static void Background(string what, Action work)
+        {
+            ThreadPool.QueueUserWorkItem(delegate { Guard(what, work); });
+        }
+
+        static readonly object logGate = new object();
+
+        // Appends the full error, with the version and where it happened, to app.log. Past 1 MB the log
+        // moves to app.old.log first, so crash details can't fill the disk.
+        public static void LogError(string what, Exception ex)
+        {
+            try
+            {
+                string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Krabbz9999 Blynclight");
+                string log = Path.Combine(dir, "app.log");
+                lock (logGate)
+                {
+                    Directory.CreateDirectory(dir);
+                    if (File.Exists(log) && new FileInfo(log).Length > 1024 * 1024)
+                    {
+                        string old = Path.Combine(dir, "app.old.log");
+                        File.Delete(old);
+                        File.Move(log, old);
+                    }
+                    File.AppendAllText(log, DateTime.Now.ToString("s") + "  " + what + " (version " + VersionText + ", " + WindowsVersion
+                        + "): " + (ex == null ? "unknown error" : ex.ToString()) + Environment.NewLine);
+                }
+            }
+            catch (Exception) { } // Logging must never cause a crash of its own.
+        }
+
+        // E.g. "Windows 25H2, build 26200.9711". Environment.OSVersion says 6.2 on every Windows since 8 for apps without
+        // a compatibility manifest, so read the registry.
+        public static string WindowsVersion
+        {
+            get
+            {
+                try
+                {
+                    using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion"))
+                        return "Windows " + key.GetValue("DisplayVersion") + ", build " + key.GetValue("CurrentBuild") + "." + key.GetValue("UBR");
+                }
+                catch (Exception) { return "Windows " + Environment.OSVersion.Version; }
+            }
         }
     }
 
@@ -160,6 +221,7 @@ namespace Krabbz.Blynclight
                 menu.Items.Add("Project page on GitHub", null, delegate { OpenProjectPage(); });
                 menu.Items.Add("Help (user guide)", null, delegate { OpenHelp(); });
             }
+            menu.Items.Add("Email crash log...", null, delegate { CrashReport.Email(); });
             menu.Items.Add("☕ Buy me a coffee", null, delegate { OpenCoffee(); });
             menu.Items.Add("Exit tray app", null, delegate { Application.Exit(); });
 
@@ -194,11 +256,12 @@ namespace Krabbz.Blynclight
                 try { messages.BeginInvoke((Action)delegate { OnMicApp(app); }); }
                 catch (InvalidOperationException) { } // Window already gone during exit.
             });
-            teamsPoll = new System.Threading.Timer(delegate { PollTeams(); }, null, 0, TeamsPollMs);
+            teamsPoll = new System.Threading.Timer(delegate { Program.Guard("Teams status check", PollTeams); }, null, 0, TeamsPollMs);
             if (Program.UpdateRepo != null)
-                updateTimer = new System.Threading.Timer(delegate { CheckForUpdates(false); }, null, UpdateFirstCheckMs, UpdateCheckMs);
+                updateTimer = new System.Threading.Timer(delegate { Program.Guard("Update check", () => CheckForUpdates(false)); },
+                    null, UpdateFirstCheckMs, UpdateCheckMs);
             showWait = ThreadPool.RegisterWaitForSingleObject(showSignal,
-                delegate { messages.BeginInvoke((Action)ShowWindow); }, null, -1, false);
+                delegate { Program.Guard("Opening the window", () => messages.BeginInvoke((Action)ShowWindow)); }, null, -1, false);
             if (showWindow) ShowWindow();
             // Walk new users (and users updating from before the checklist existed) through setup once.
             if (!File.Exists(SetupShownPath))
@@ -219,7 +282,7 @@ namespace Krabbz.Blynclight
         {
             tray.BalloonTipClicked += delegate { if (balloonLink != null) System.Diagnostics.Process.Start(balloonLink); };
             tray.BalloonTipClosed += delegate { balloonLink = null; };
-            ThreadPool.QueueUserWorkItem(delegate
+            Program.Background("Showing what changed", delegate
             {
                 string repo = Program.UpdateRepo;
                 string notes = repo == null ? null : Updater.ReleaseNotes(repo, Program.VersionText);
@@ -280,7 +343,7 @@ namespace Krabbz.Blynclight
             light.SetTeamsColor(null);
             if (old != null)
             {
-                ThreadPool.QueueUserWorkItem(delegate
+                Program.Background("Teams sign-out", delegate
                 {
                     old.SignOut();
                     old.Dispose();
@@ -431,7 +494,7 @@ namespace Krabbz.Blynclight
         {
             if (!manual && !AppSettings.AutoUpdate) return;
             if (Interlocked.Exchange(ref updateCheckRunning, 1) == 1) return;
-            ThreadPool.QueueUserWorkItem(delegate
+            Program.Background("Update check", delegate
             {
                 UpdateInfo update = null;
                 string message;
@@ -546,7 +609,7 @@ namespace Krabbz.Blynclight
         {
             if (presence.SignedIn)
             {
-                ThreadPool.QueueUserWorkItem(delegate
+                Program.Background("Teams sign-out", delegate
                 {
                     presence.SignOut();
                     try
@@ -567,7 +630,7 @@ namespace Krabbz.Blynclight
             }
             presenceItem.Enabled = false;
             presenceItem.Text = "Signing in to Microsoft (check your browser)...";
-            ThreadPool.QueueUserWorkItem(delegate
+            Program.Background("Teams sign-in", delegate
             {
                 string message;
                 ToolTipIcon icon = ToolTipIcon.Info;
@@ -664,10 +727,10 @@ namespace Krabbz.Blynclight
         {
             if (presence != null && presence.SignedIn)
             {
-                ThreadPool.QueueUserWorkItem(delegate { PollTeams(); });
+                Program.Background("Teams status check", delegate { PollTeams(); });
                 return;
             }
-            ThreadPool.QueueUserWorkItem(delegate
+            Program.Background("Embrava Connect restart", delegate
             {
                 bool installed;
                 try { installed = EmbravaConnect.Restart(); }

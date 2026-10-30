@@ -158,46 +158,59 @@ namespace Krabbz.Blynclight
             int hue = 0;
             int flashMs = 0;
             int sinceDeviceCheck = DeviceCheckMs;
+            string lastError = null;
             do
             {
-                string current = ShownState;
-
-                if (sinceDeviceCheck >= DeviceCheckMs)
+                // An error here (e.g. a light or dock vanishing mid-scan) would close the app; log it once and keep going.
+                try { LightStep(ref hue, ref flashMs, ref sinceDeviceCheck); lastError = null; }
+                catch (Exception ex)
                 {
-                    sinceDeviceCheck = 0;
-                    var found = BlyncDevice.FindLights();
-                    bool newLight = false, countChanged;
-                    lock (sync)
-                    {
-                        foreach (var light in found)
-                            if (!knownLights.Exists(known => known.Path == light.Path)) newLight = true;
-                        countChanged = found.Count != knownLights.Count;
-                        knownLights = found;
-                    }
-                    // Re-send the solid color every check, not just when a light is plugged in: another program
-                    // (or a write that raced the first device scan) can leave a light showing the wrong color.
-                    current = ShownState;
-                    Apply(current);
-                    if ((newLight || countChanged) && LightsChanged != null) LightsChanged();
+                    if (ex.Message != lastError) Program.LogError("Light update", ex);
+                    lastError = ex.Message;
                 }
-
-                if (current == LightState.Party)
-                {
-                    byte r, g, b;
-                    BlyncDevice.HueToRgb(hue, out r, out g, out b);
-                    WriteAll(LightColor.Rgb(r, g, b));
-                    hue = (hue + PartyHueStep) % 360;
-                }
-                if (current == LightState.CallFlash)
-                {
-                    // Write every tick so a light plugged in mid-call joins in; the color flips every CallFlashMs.
-                    bool red = (flashMs / CallFlashMs) % 2 == 0;
-                    WriteAll(BlyncDevice.ColorFor(red ? LightState.Red : "blue"));
-                    flashMs += PartyStepMs;
-                }
-                else flashMs = 0;
                 sinceDeviceCheck += PartyStepMs;
             } while (!stopEvent.WaitOne(PartyStepMs));
+        }
+
+        // One tick of LightLoop: scan for lights every DeviceCheckMs, and animate Party Mode and call flashing.
+        void LightStep(ref int hue, ref int flashMs, ref int sinceDeviceCheck)
+        {
+            string current = ShownState;
+
+            if (sinceDeviceCheck >= DeviceCheckMs)
+            {
+                sinceDeviceCheck = 0;
+                var found = BlyncDevice.FindLights();
+                bool newLight = false, countChanged;
+                lock (sync)
+                {
+                    foreach (var light in found)
+                        if (!knownLights.Exists(known => known.Path == light.Path)) newLight = true;
+                    countChanged = found.Count != knownLights.Count;
+                    knownLights = found;
+                }
+                // Re-send the solid color every check, not just when a light is plugged in: another program
+                // (or a write that raced the first device scan) can leave a light showing the wrong color.
+                current = ShownState;
+                Apply(current);
+                if ((newLight || countChanged) && LightsChanged != null) LightsChanged();
+            }
+
+            if (current == LightState.Party)
+            {
+                byte r, g, b;
+                BlyncDevice.HueToRgb(hue, out r, out g, out b);
+                WriteAll(LightColor.Rgb(r, g, b));
+                hue = (hue + PartyHueStep) % 360;
+            }
+            if (current == LightState.CallFlash)
+            {
+                // Write every tick so a light plugged in mid-call joins in; the color flips every CallFlashMs.
+                bool red = (flashMs / CallFlashMs) % 2 == 0;
+                WriteAll(BlyncDevice.ColorFor(red ? LightState.Red : "blue"));
+                flashMs += PartyStepMs;
+            }
+            else flashMs = 0;
         }
 
         void Apply(string newState)

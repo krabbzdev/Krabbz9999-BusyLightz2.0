@@ -48,7 +48,7 @@ namespace Krabbz.Blynclight
         public CallDetector(Action<MicApp> callChanged)
         {
             this.callChanged = callChanged;
-            timer = new Timer(delegate { Poll(); }, null, 0, PollMs);
+            timer = new Timer(delegate { Program.Guard("Microphone check", Poll); }, null, 0, PollMs);
         }
 
         // Reports the current mic app again on the next poll, e.g. after settings change.

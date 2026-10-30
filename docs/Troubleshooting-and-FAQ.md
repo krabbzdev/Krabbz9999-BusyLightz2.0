@@ -50,6 +50,17 @@ Another program already uses that key combination; the app tells you when it sta
 - Updates only arrive once they're published on the [Releases](https://github.com/krabbzdev/KrabbzDev-BusyLightz2.0/releases) page.
 - Update logs are in `%LOCALAPPDATA%\Krabbz9999 Blynclight\updates`.
 
+## If the app crashes
+
+The app writes any unexpected error to its log, with the version and Windows version, and keeps running when it can. To send the log:
+
+1. Start the app again (Start menu), then click **Email crash log...** in Settings or the tray menu.
+2. A new email to clove@showtechsolutions.com opens with the log attached. Add what you were doing when it crashed, and send it.
+
+With classic Outlook and most desktop mail apps, the log is attached for you. With the new Outlook or webmail, the folder with the log file opens next to the email: drag the file into the email.
+
+The log is `%LOCALAPPDATA%\Krabbz9999 Blynclight\app.log`. It holds error messages, such as Teams or light errors, and sometimes the text of a Teams status message you set yourself. It never holds passwords or sign-in tokens. You can open the attached file and read it before sending.
+
 ## Windows says the installer is from an unknown publisher
 
 The installer isn't code-signed yet. Click **More info > Run anyway**.

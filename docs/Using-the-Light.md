@@ -69,6 +69,7 @@ Change how long overrides last (5 minutes to 4 hours) in [Settings](#settings). 
 | **Check for updates** | Looks for a newer version now. |
 | **Project page on GitHub** | Opens this project's page. |
 | **Help (user guide)** | Opens this guide. |
+| **Email crash log...** | Starts an email with the app's log attached. See [If the app crashes](Troubleshooting-and-FAQ.md#if-the-app-crashes). |
 | **☕ Buy me a coffee** | Opens KrabbzDev's Buy Me a Coffee page. |
 | **Exit tray app** | Closes the app. The light stays on its last color (Test Lights and flashing turn off). The app starts again at your next sign-in. |
 
@@ -116,6 +117,7 @@ Open with the **⚙ Settings** button in the window or **Settings...** in the tr
 | **Match my Teams status when I pick Busy, Available or On a call** | See [Teams Status](Teams-Status.md#teams-matches-what-you-pick). |
 | **Set my Teams status message while my lights are red** | On by default, showing *On a video call*. Pick another message, or **Custom message...** to type your own. See [Teams Status](Teams-Status.md#status-message-while-your-lights-are-red). |
 | **Setup checklist...** | Opens the [Setup Checklist](Setup-Checklist.md). |
+| **Email crash log...** (bottom left) | Starts an email with the app's log attached. See [If the app crashes](Troubleshooting-and-FAQ.md#if-the-app-crashes). |
 | **☕ Buy me a coffee** (bottom right) | Opens [KrabbzDev's Buy Me a Coffee page](https://buymeacoffee.com/krabbzdev), if you'd like to say thanks. Also in the tray menu. |
 
 ## Colors at a glance

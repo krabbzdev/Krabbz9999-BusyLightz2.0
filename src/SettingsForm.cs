@@ -104,6 +104,19 @@ namespace Krabbz.Blynclight
             coffee.Location = new Point(width - 20 - coffee.Width, y);
             coffee.Click += delegate { tray.OpenCoffee(); };
             Controls.Add(coffee);
+            // On the same line, at the left: for sending what went wrong after a crash.
+            var crashLog = new LinkLabel
+            {
+                Text = "Email crash log...",
+                AutoSize = true,
+                Location = new Point(20, y + 2),
+                // Lightened in Dark mode, where the plain accent is hard to read on the dark page.
+                LinkColor = AppSettings.DarkMode ? Theme.Mix(Theme.Teams, Color.White, 0.45) : Theme.Teams,
+                ActiveLinkColor = Theme.Teams,
+                LinkBehavior = LinkBehavior.HoverUnderline,
+            };
+            crashLog.LinkClicked += delegate { CrashReport.Email(); };
+            Controls.Add(crashLog);
             y += 32;
 
             var setup = new Button { Text = "Setup checklist...", Bounds = new Rectangle(20, y, 150, 34) };

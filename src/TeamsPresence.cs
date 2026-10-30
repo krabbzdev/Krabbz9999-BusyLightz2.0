@@ -68,9 +68,9 @@ namespace Krabbz.Blynclight
             this.tenantId = tenantId;
             this.reportProblem = reportProblem;
             Load();
-            renewTimer = new Timer(delegate { Renew(); }, null, Timeout.Infinite, Timeout.Infinite);
-            messageTimer = new Timer(delegate { UpdateStatusMessage(); }, null, Timeout.Infinite, Timeout.Infinite);
-            busyTimer = new Timer(delegate { UpdatePresence(); }, null, Timeout.Infinite, Timeout.Infinite);
+            renewTimer = new Timer(delegate { Program.Guard("Teams Busy renewal", Renew); }, null, Timeout.Infinite, Timeout.Infinite);
+            messageTimer = new Timer(delegate { Program.Guard("Teams status message", UpdateStatusMessage); }, null, Timeout.Infinite, Timeout.Infinite);
+            busyTimer = new Timer(delegate { Program.Guard("Teams status update", UpdatePresence); }, null, Timeout.Infinite, Timeout.Infinite);
         }
 
         public bool SignedIn { get { lock (sync) return refreshToken != null; } }
@@ -169,7 +169,7 @@ namespace Krabbz.Blynclight
                 onCall = false;
             }
             renewTimer.Change(Timeout.Infinite, Timeout.Infinite);
-            ThreadPool.QueueUserWorkItem(delegate { TryClear(); });
+            Program.Background("Clearing Teams Busy", TryClear);
         }
 
         void Renew()
